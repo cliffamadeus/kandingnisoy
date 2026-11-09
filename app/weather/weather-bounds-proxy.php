@@ -146,7 +146,7 @@ if ($ec === null) {
     $url = 'https://api.open-meteo.com/v1/forecast?latitude=' . WF_LAT
          . '&longitude=' . WF_LON
          . '&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation'
-         . '&models=ecmwf_ifs04'
+         . '&models=ecmwf_ifs025' // UPDATED MODEL ID
          . '&timezone=Asia%2FManila&forecast_days=2';
     $ec = wf_fetch_json($url);
     wf_cache_set('ec', $ec);
