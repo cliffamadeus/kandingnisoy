@@ -18,7 +18,7 @@ define('MANOLO_FORTICH_NAME', 'Manolo Fortich, Bukidnon');
 define('WEATHER_CACHE_TTL', 1800);
 
 // ============================================================
-// FUNCTIONS (Same as before)
+// FUNCTIONS
 // ============================================================
 function fetchOpenWeather(string $endpoint, array $params): ?array
 {
@@ -223,7 +223,6 @@ if ($morningTigwayAdvisory) {
         'message' => "Maayong buntag! Nihunong na ang ulan gabii. Pwede na ninyo matugway (ipagawas) ang mga kanding sugod 7:00 AM kay moinit na ang adlaw ug mo-uga na ang yuta.",
     ];
 }
-
 if ($rainTonight > 5 || $rainToday > 15) {
     $advisories[] = [
         'type' => 'rain', 'priority' => 'high', 'title' => 'Pahibalo: Kusog nga Ulan',
@@ -235,7 +234,6 @@ if ($rainTonight > 5 || $rainToday > 15) {
         'message' => "Pahibalo: Posibleng naay ulan karong adlawa o gabhiona. Kung mabasa ang kasagbutan, palihog ayaw lang sa ipagawas (itugway) ang kanding inig ka-buntag kay basa ug tugnaw pa. Hulata nga moinit ang adlaw mga 7:00 AM pataas aron mo-uga ang yuta bag-o itugway.",
     ];
 }
-
 if ($heat['level'] === 'high') {
     $advisories[] = [
         'type' => 'heat', 'priority' => 'high', 'title' => 'Pahibalo: Sobrang Init',
@@ -422,7 +420,7 @@ renderHeader($title);
     }
     .forecast-btn:hover { background: var(--primary-dark); }
 
-    /* REORGANIZED GRID LAYOUT (Optimized Flow) */
+    /* REORGANIZED GRID LAYOUT */
     .dashboard-grid {
         display: grid;
         grid-template-columns: 1.6fr 1fr;
@@ -432,10 +430,9 @@ renderHeader($title);
     @media (max-width: 1024px) {
         .dashboard-grid { grid-template-columns: 1fr; }
     }
-
     .grid-left, .grid-right { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 
-    /* METRIC STRIP */
+    /* METRIC STRIP (UPDATED TO SHOW NEW METRICS) */
     .metric-strip {
         display: grid; grid-template-columns: repeat(4, 1fr);
         background: var(--surface); border: 1px solid var(--border);
@@ -506,7 +503,7 @@ renderHeader($title);
     .hd-col-label { font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
     .hd-col-value { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
 
-    /* GOAT CARE GUIDE & ADVISORIES */
+    /* ACTION CENTER & ADVISORIES (CONDENSED) */
     .guide-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
     .guide-title { font-size: 14px; font-weight: 800; color: var(--text); }
     .guide-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -515,54 +512,53 @@ renderHeader($title);
     .guide-badge.red   { background: var(--red-light); color: #b91c1c; }
     .guide-sub { font-size: 11.5px; color: var(--text-3); margin: 0 0 14px; font-weight: 600; }
 
-    .guide-item { padding: 12px 14px; background: #f8fafc; border: 1px solid var(--border-2); border-radius: var(--radius-sm); margin-bottom: 10px; }
+    .guide-item { padding: 10px 14px; background: #f8fafc; border: 1px solid var(--border-2); border-radius: var(--radius-sm); margin-bottom: 8px; }
     .guide-item:last-child { margin-bottom: 0; }
     .guide-item.amber { background: #fffbeb; border-color: #fde68a; }
     .guide-item.green { background: #f0fdf4; border-color: #bbf7d0; }
     .guide-item.red   { background: #fef2f2; border-color: #fecaca; }
-    .guide-item-title { font-size: 12.5px; font-weight: 800; color: var(--text); margin-bottom: 3px; line-height: 1.3; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .guide-item-tag { font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .guide-item-title { font-size: 12px; font-weight: 800; color: var(--text); margin-bottom: 2px; line-height: 1.3; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .guide-item-tag { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
     .guide-item.green .guide-item-tag { background: var(--green-light); color: #15803d; }
     .guide-item.amber .guide-item-tag { background: var(--amber-light); color: #92400e; }
     .guide-item.red   .guide-item-tag { background: var(--red-light); color: #b91c1c; }
-    .guide-item-desc { font-size: 11.5px; color: var(--text-2); line-height: 1.5; }
+    .guide-item-desc { font-size: 11px; color: var(--text-2); line-height: 1.4; }
 
-    .advisory-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-2); }
-    .advisory-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-    .advisory-title { font-size: 12.5px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; }
-    .advisory-count-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; font-size: 10px; font-weight: 800; background: var(--red); color: #fff; }
-    .advisory-priority-badge { font-size: 9.5px; font-weight: 800; padding: 3px 8px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .advisory-section { margin-bottom: 14px; }
+    .advisory-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .advisory-title { font-size: 12px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .advisory-count-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; font-size: 9.5px; font-weight: 800; background: var(--red); color: #fff; }
+    .advisory-priority-badge { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
     .advisory-priority-badge.high { background: var(--red-light); color: #b91c1c; }
     .advisory-priority-badge.medium { background: var(--amber-light); color: #92400e; }
     .advisory-priority-badge.low { background: var(--border-2); color: var(--text-2); }
 
-    .advisory-option { display: block; padding: 10px 12px; margin-bottom: 8px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s var(--ease); border: 1.5px solid var(--border); background: #fafbfc; }
+    .advisory-option { display: block; padding: 8px 10px; margin-bottom: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s var(--ease); border: 1.5px solid var(--border); background: #fafbfc; }
     .advisory-option:hover { background: #f1f5f9; }
     .advisory-option.high { border-color: #fecaca; background: #fef2f2; }
     .advisory-option.medium { border-color: #fde68a; background: #fffbeb; }
-    .advisory-option input[type="radio"] { margin-right: 8px; accent-color: var(--green); cursor: pointer; }
-    .advisory-option-title { font-size: 12.5px; font-weight: 800; color: var(--text); display: inline; }
-    .advisory-option-msg { margin: 6px 0 0 24px; font-size: 11.5px; color: var(--text-2); line-height: 1.45; }
+    .advisory-option input[type="radio"] { margin-right: 6px; accent-color: var(--green); cursor: pointer; }
+    .advisory-option-title { font-size: 12px; font-weight: 800; color: var(--text); display: inline; }
+    .advisory-option-msg { margin: 4px 0 0 20px; font-size: 11px; color: var(--text-2); line-height: 1.4; }
 
-    .send-advisory-btn { width: 100%; padding: 12px; margin-top: 10px; background: linear-gradient(145deg, #22C55E, #15803D); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.25); transition: all 0.15s var(--ease); }
-    .send-advisory-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(34, 197, 94, 0.35); }
-    .send-advisory-btn:active { transform: translateY(0); }
+    .send-advisory-btn { width: 100%; padding: 10px; margin-top: 8px; background: #fff; color: #15803d; border: 1.5px solid #15803d; border-radius: var(--radius-sm); font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s var(--ease); }
+    .send-advisory-btn:hover { background: #f0fdf4; }
 
-    .no-advisory { margin-top: 16px; padding: 14px; border-radius: var(--radius-sm); background: #ecfdf5; border: 1px solid #bbf7d0; text-align: center; }
-    .no-advisory p { margin: 0; font-size: 12.5px; color: #065f46; font-weight: 700; }
-    .send-result { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-sm); }
+    .no-advisory { margin-bottom: 14px; padding: 12px; border-radius: var(--radius-sm); background: #ecfdf5; border: 1px solid #bbf7d0; text-align: center; }
+    .no-advisory p { margin: 0; font-size: 12px; color: #065f46; font-weight: 700; }
+    .send-result { margin-bottom: 12px; padding: 10px 12px; border-radius: var(--radius-sm); }
     .send-result.success { background: #dcfce7; border: 1px solid #bbf7d0; }
     .send-result.failed { background: #fee2e2; border: 1px solid #fecaca; }
-    .send-result strong { font-size: 12.5px; display: block; margin-bottom: 4px; }
+    .send-result strong { font-size: 12px; display: block; margin-bottom: 2px; }
     .send-result.success strong { color: #166534; }
     .send-result.failed strong { color: #b91c1c; }
-    .send-result p { margin: 0; font-size: 11.5px; color: var(--text-2); line-height: 1.4; }
+    .send-result p { margin: 0; font-size: 11px; color: var(--text-2); line-height: 1.4; }
 
     /* 5-DAY FORECAST */
-    .forecast-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #f8fafc; border: 1px solid var(--border-2); border-radius: var(--radius-sm); margin-bottom: 8px; }
+    .forecast-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #f8fafc; border: 1px solid var(--border-2); border-radius: var(--radius-sm); margin-bottom: 6px; }
     .forecast-row:last-child { margin-bottom: 0; }
     .forecast-day { width: 56px; font-size: 11.5px; font-weight: 800; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.04em; }
-    .forecast-icon { width: 26px; height: 26px; color: var(--primary); flex-shrink: 0; }
+    .forecast-icon { width: 24px; height: 24px; color: var(--primary); flex-shrink: 0; }
     .forecast-temps { flex: 1; display: flex; gap: 8px; font-size: 12.5px; font-weight: 800; }
     .forecast-hi { color: var(--text); }
     .forecast-lo { color: var(--text-3); font-weight: 600; }
@@ -652,33 +648,33 @@ renderHeader($title);
                 <a href="#forecast" class="forecast-btn">5-Day Forecast</a>
             </div>
 
-            <!-- NEW DASHBOARD GRID -->
+            <!-- DASHBOARD GRID -->
             <div class="dashboard-grid">
 
                 <!-- LEFT COLUMN -->
                 <div class="grid-left">
 
-                    <!-- METRIC STRIP -->
+                    <!-- METRIC STRIP (NEW NON-DUPLICATE METRICS) -->
                     <div class="metric-strip">
                         <div class="metric-cell">
-                            <div class="metric-label">Temperature</div>
-                            <div class="metric-value"><?php echo $temp; ?><span class="unit">°C</span></div>
-                            <div class="metric-note">Feels <?php echo $feelsLike; ?>°</div>
+                            <div class="metric-label">Heat Index (THI)</div>
+                            <div class="metric-value"><?php echo round($thi); ?><span class="unit"></span></div>
+                            <div class="metric-note"><?php echo $heat['label']; ?> stress</div>
                         </div>
                         <div class="metric-cell">
-                            <div class="metric-label">Rainfall</div>
-                            <div class="metric-value"><?php echo $rainToday; ?><span class="unit">mm</span></div>
-                            <div class="metric-note"><?php echo $rainInfo['label']; ?></div>
+                            <div class="metric-label">Rain Tonight</div>
+                            <div class="metric-value"><?php echo $rainTonight; ?><span class="unit">mm</span></div>
+                            <div class="metric-note"><?php echo $rainTonight > 2 ? 'Bring to shelter' : 'Minimal'; ?></div>
                         </div>
                         <div class="metric-cell">
-                            <div class="metric-label">Humidity</div>
-                            <div class="metric-value"><?php echo $humidity; ?><span class="unit">%</span></div>
-                            <div class="metric-note"><?php echo $humidity >= 60 ? 'Normal' : 'Dry'; ?></div>
+                            <div class="metric-label">Wind Direction</div>
+                            <div class="metric-value"><?php echo $windDir; ?></div>
+                            <div class="metric-note"><?php echo $windSpeed; ?> km/h</div>
                         </div>
                         <div class="metric-cell">
-                            <div class="metric-label">Wind</div>
-                            <div class="metric-value"><?php echo $windSpeed; ?><span class="unit">km/h</span></div>
-                            <div class="metric-note">From <?php echo $windDir; ?></div>
+                            <div class="metric-label">Grazing Status</div>
+                            <div class="metric-value" style="font-size: 16px; margin-top: 4px;"><?php echo $hasHighPop ? 'Caution' : ($temp >= 32 ? 'Limited' : 'Safe'); ?></div>
+                            <div class="metric-note"><?php echo $hasHighPop ? 'Rain likely' : 'Good conditions'; ?></div>
                         </div>
                     </div>
 
@@ -765,7 +761,7 @@ renderHeader($title);
                         </div>
                     </div>
 
-                    <!-- MOVED TO LEFT: 5-DAY FORECAST -->
+                    <!-- 5-DAY FORECAST (MOVED TO LEFT COLUMN) -->
                     <div class="card" id="forecast">
                         <div class="guide-head">
                             <div class="guide-title">5-Day Forecast</div>
@@ -806,7 +802,7 @@ renderHeader($title);
                 <!-- RIGHT COLUMN -->
                 <div class="grid-right">
 
-                    <!-- TOP RIGHT: ACTION CENTER (Advisories & Care) -->
+                    <!-- ACTION CENTER (CONDENSED) -->
                     <div class="card">
                         <div class="guide-head">
                             <div class="guide-title">Action Center</div>
@@ -815,7 +811,7 @@ renderHeader($title);
                         <p class="guide-sub">Urgent advisories and grazing tips</p>
 
                         <?php if (!empty($advisories)): ?>
-                            <div class="advisory-section" style="margin-top:0; padding-top:0; border-top:none; margin-bottom: 16px;">
+                            <div class="advisory-section" style="margin-top:0; padding-top:0; border-top:none;">
                                 <div class="advisory-header">
                                     <div class="advisory-title">
                                         ⚠️ Active Advisories
@@ -835,20 +831,21 @@ renderHeader($title);
                                 </form>
                             </div>
                         <?php else: ?>
-                            <div class="no-advisory" style="margin-top:0; margin-bottom: 16px;">
+                            <div class="no-advisory" style="margin-top:0;">
                                 <p>✅ Walay active advisory. Maayo ang panahon para sa goats.</p>
                             </div>
                         <?php endif; ?>
 
                         <?php if ($sendResult): ?>
-                            <div class="send-result <?php echo $sendResult['success'] ? 'success' : 'failed'; ?>" style="margin-bottom: 16px;">
+                            <div class="send-result <?php echo $sendResult['success'] ? 'success' : 'failed'; ?>" style="margin-bottom: 12px;">
                                 <strong><?php if ($sendResult['success']): ?>✅ Advisory sent successfully!<?php else: ?>❌ Failed to send advisory<?php endif; ?></strong>
                                 <p><?php if ($sendResult['success']): ?>Sent to <strong><?php echo $sendResult['success_count']; ?></strong> of <strong><?php echo $sendResult['recipient_count']; ?></strong> farmers.<?php else: ?>Error: <?php echo htmlspecialchars($sendResult['error'] ?? 'Unknown error'); ?><?php endif; ?></p>
                             </div>
                         <?php endif; ?>
 
+                        <!-- CONDENSED GUIDES -->
                         <div class="guide-item <?php echo ($temp >= 30 || $hasHighPop) ? 'amber' : 'green'; ?>">
-                            <div class="guide-item-title">Grazing <span class="guide-item-tag"><?php echo $hasHighPop ? 'CAUTION (RAIN LIKELY)' : ($temp >= 32 ? 'LIMITED' : ($temp >= 30 ? 'CAUTION' : 'SAFE')); ?></span></div>
+                            <div class="guide-item-title">Grazing <span class="guide-item-tag"><?php echo $hasHighPop ? 'CAUTION' : ($temp >= 32 ? 'LIMITED' : ($temp >= 30 ? 'CAUTION' : 'SAFE')); ?></span></div>
                             <div class="guide-item-desc">
                                 <?php if ($hasHighPop): ?>High chance of rain. Prepare to bring goats to shelter.
                                 <?php elseif ($temp >= 32): ?>Too hot for extended grazing. Provide shade and water access.
@@ -858,22 +855,17 @@ renderHeader($title);
                         </div>
 
                         <div class="guide-item <?php echo ($rainTonight > 2 || $hasHighPop) ? 'amber' : 'green'; ?>">
-                            <div class="guide-item-title">Rain Warning <span class="guide-item-tag"><?php echo $rainTonight > 5 ? 'ACTION NEEDED' : (($rainTonight > 2 || $hasHighPop) ? 'ADVISORY' : 'NONE'); ?></span></div>
+                            <div class="guide-item-title">Rain Warning <span class="guide-item-tag"><?php echo $rainTonight > 5 ? 'ACTION' : (($rainTonight > 2 || $hasHighPop) ? 'ADVISORY' : 'NONE'); ?></span></div>
                             <div class="guide-item-desc">
-                                <?php if ($rainTonight > 5): ?>Heavy rain expected. Bring goats into barn. Move to elevated dry areas.
+                                <?php if ($rainTonight > 5): ?>Heavy rain expected. Bring goats into barn.
                                 <?php elseif ($rainTonight > 2): ?>Rain expected (<?php echo $rainTonight; ?> mm). Bring goats into barn before dark.
-                                <?php elseif ($hasHighPop): ?>High probability of rain in the next few hours. Monitor the sky.
+                                <?php elseif ($hasHighPop): ?>High probability of rain. Monitor the sky.
                                 <?php else: ?>Minimal rain expected. Normal care is fine.<?php endif; ?>
                             </div>
                         </div>
-
-                        <div class="guide-item <?php if ($heat['level'] === 'high') echo 'red'; elseif ($heat['level'] === 'mid') echo 'amber'; else echo 'green'; ?>">
-                            <div class="guide-item-title">Heat Level <span class="guide-item-tag"><?php echo strtoupper($heat['label']); ?></span></div>
-                            <div class="guide-item-desc"><?php echo $heat['desc']; ?></div>
-                        </div>
                     </div>
 
-                    <!-- BOTTOM RIGHT: MODEL BOUNDS ANALYSIS -->
+                    <!-- MODEL BOUNDS ANALYSIS -->
                     <div class="card">
                         <div class="guide-head">
                             <div class="guide-title">Model Bounds Analysis</div>
@@ -886,7 +878,7 @@ renderHeader($title);
                         <?php if ($boundsData && !empty($boundsData['bounds'])): ?>
                             <?php $b = $boundsData['bounds']; $src = $boundsData['sources']; $chartData = $boundsData['chart_data'] ?? null; ?>
                             
-                            <div class="metric-strip" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 14px;">
+                            <div class="metric-strip" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 14px; background: #f8fafc;">
                                 <?php
                                 $rows = [['Temperature', $b['temp'], '°C', 1], ['Humidity', $b['humidity'], '%', 0], ['Wind', $b['wind'], ' km/h', 1], ['Rain (1h)', $b['rain'], ' mm', 1]];
                                 foreach ($rows as $r):
@@ -904,7 +896,7 @@ renderHeader($title);
                             <?php if ($chartData && !empty($chartData['time'])): ?>
                             <div style="margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border-2);">
                                 <div style="font-size: 11px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">24h Temperature Trendline</div>
-                                <div style="position: relative; height: 180px; width: 100%;"><canvas id="boundsChart"></canvas></div>
+                                <div style="position: relative; height: 220px; width: 100%;"><canvas id="boundsChart"></canvas></div>
                             </div>
                             <?php endif; ?>
 
@@ -937,7 +929,7 @@ renderHeader($title);
                                 </table>
                             </div>
                             <div style="margin-top:10px; padding:10px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-size:11px; color:#166534; line-height:1.5;">
-                                <strong>Interpolation:</strong> mean of available sources. <strong>Bounds:</strong> min/max across sources. A narrow spread means models agree; a wide spread means uncertainty is high.
+                                <strong>Interpolation:</strong> mean of available sources. <strong>Bounds:</strong> min/max across sources.
                             </div>
                         <?php else: ?>
                             <div style="padding:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; font-size:12px; color:#b91c1c;"><?php echo htmlspecialchars($boundsError ?: 'Bounds data unavailable'); ?></div>
@@ -1001,31 +993,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const chartData = <?php echo json_encode($boundsData['chart_data']); ?>;
     const ctx = document.getElementById('boundsChart'); if (!ctx) return;
     const labels = chartData.time.map(t => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }));
+    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
+    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.2)');
+    gradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
 
     new Chart(ctx.getContext('2d'), {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
-                { label: 'Interpolated Trendline', data: chartData.mean, borderColor: '#0f172a', borderWidth: 3, pointRadius: 0, pointHoverRadius: 5, fill: false, tension: 0.3 },
-                { label: 'OpenWeather', data: chartData.ow, borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.3, spanGaps: true },
-                { label: 'Open-Meteo', data: chartData.om, borderColor: '#3b82f6', backgroundColor: '#3b82f6', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.3 },
-                { label: 'ECMWF', data: chartData.ec, borderColor: '#10b981', backgroundColor: '#10b981', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.3 },
-                { label: 'MET Norway', data: chartData.metno, borderColor: '#8b5cf6', backgroundColor: '#8b5cf6', borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.3, spanGaps: true }
+                { label: 'Interpolated Mean', data: chartData.mean, borderColor: '#2563eb', backgroundColor: gradient, borderWidth: 3, pointRadius: 0, pointHoverRadius: 6, fill: true, tension: 0.4 },
+                { label: 'OpenWeather', data: chartData.ow, borderColor: 'rgba(245, 158, 11, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4, spanGaps: true },
+                { label: 'Open-Meteo', data: chartData.om, borderColor: 'rgba(59, 130, 246, 0.5)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4 },
+                { label: 'ECMWF', data: chartData.ec, borderColor: 'rgba(16, 185, 129, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4 },
+                { label: 'MET Norway', data: chartData.metno, borderColor: 'rgba(139, 92, 246, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4, spanGaps: true }
             ]
         },
         options: {
             responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { display: true, position: 'top', labels: { boxWidth: 12, boxHeight: 12, font: { size: 10, family: 'system-ui' }, usePointStyle: true, pointStyle: 'line' } },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)', titleFont: { size: 11, weight: 'bold' }, bodyFont: { size: 11 }, padding: 10, boxPadding: 4,
-                    callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y + '°C'; } return label; } }
-                }
+                legend: { display: true, position: 'top', labels: { boxWidth: 10, boxHeight: 10, font: { size: 10, family: 'system-ui' }, usePointStyle: true, pointStyle: 'circle' } },
+                tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', titleFont: { size: 11, weight: 'bold' }, bodyFont: { size: 11 }, padding: 10, boxPadding: 4, callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) label += context.parsed.y + '°C'; return label; } } }
             },
             scales: {
                 x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 6 } },
-                y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 9 }, color: '#94a3b8', callback: function(value) { return value + '°'; } } }
+                y: { grid: { color: '#f1f5f9', drawBorder: false }, ticks: { font: { size: 9 }, color: '#94a3b8', callback: function(value) { return value + '°'; } } }
             }
         }
     });
