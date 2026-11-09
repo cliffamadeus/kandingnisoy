@@ -16,6 +16,28 @@ define('WF_LAT', 8.3678);
 define('WF_LON', 124.8663);
 define('WF_CACHE_TTL', 1800);
 
+// ---- Helper to read a specific key from the .env file ----
+function wf_get_env(string $key, string $default = ''): string {
+    // Adjust the path if your .env is located elsewhere
+    $envPath = __DIR__ . '/../../.env'; 
+    if (!file_exists($envPath)) return $default;
+    
+    $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        // Skip comments
+        if (strpos($line, '#') === 0) continue;
+        
+        // Check if the line starts with our key
+        if (strpos($line, $key . '=') === 0) {
+            $value = substr($line, strlen($key) + 1);
+            // Remove surrounding quotes if they exist
+            return trim($value, '"\'');
+        }
+    }
+    return $default;
+}
+
 // ---- session cache helper ----
 function wf_cache_get(string $key) {
     if (isset($_SESSION['_wf_bounds'][$key]) &&
@@ -32,22 +54,35 @@ function wf_cache_set(string $key, $value) {
 function wf_fetch_json(string $url, bool $isMetNo = false): ?array {
     $ch = curl_init($url);
     $headers = [];
+    
+    // Default User-Agent for standard APIs
+    $userAgent = 'GoatPro/1.0'; 
+    
     if ($isMetNo) {
-        // MET Norway requires a valid User-Agent with contact info
-        $headers[] = 'User-Agent: GoatPro/1.0 reconcliffy@gmail.com.com'; 
+        // Fetch the email from the .env file, fallback to localhost if missing
+        $contact = wf_get_env('MET_NORWAY_CONTACT', 'admin@localhost');
+        
+        // MET Norway requires the AppName/Version and contact info
+        $userAgent = 'GoatPro/1.0 ' . $contact; 
+        
+        // Set it explicitly in the header
+        $headers[] = 'User-Agent: ' . $userAgent; 
     }
+    
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 12,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_USERAGENT      => $isMetNo ? 'GoatPro/1.0 reconcliffy@gmail.com' : 'GoatPro/1.0',
+        CURLOPT_USERAGENT      => $userAgent,
         CURLOPT_HTTPHEADER     => $headers,
     ]);
+    
     $body = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    
     if ($code !== 200 || !$body) return null;
     $json = json_decode($body, true);
     return is_array($json) ? $json : null;
