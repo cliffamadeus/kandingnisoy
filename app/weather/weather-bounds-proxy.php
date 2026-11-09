@@ -76,6 +76,17 @@ if ($ow === null) {
     }
 }
 
+// ---- 1b. OpenWeather (forecast) ----
+$owForecast = wf_cache_get('ow_forecast');
+if ($owForecast === null) {
+    if (defined('OPENWEATHER_API_KEY')) {
+        $url = 'https://api.openweathermap.org/data/2.5/forecast?lat=' . WF_LAT
+             . '&lon=' . WF_LON . '&units=metric&appid=' . OPENWEATHER_API_KEY;
+        $owForecast = wf_fetch_json($url);
+        wf_cache_set('ow_forecast', $owForecast);
+    }
+}
+
 // ---- 2. Open-Meteo (blended multi-model) ----
 $om = wf_cache_get('om');
 if ($om === null) {
@@ -192,11 +203,75 @@ foreach ($sources as $name => $s) {
     ];
 }
 
+// ============================================================
+// EXTRACT 24H TRENDLINE DATA FOR COMPARISON CHART
+// ============================================================
+$chartData = [
+    'time' => [], 
+    'ow'   => [], 
+    'om'   => [], 
+    'ec'   => [], 
+    'mean' => []  
+];
+
+if ($om && isset($om['hourly']['time'])) {
+    $hourlyTimes = $om['hourly']['time'];
+    $omTemps = $om['hourly']['temperature_2m'] ?? [];
+    $ecTemps = ($ec && isset($ec['hourly']['temperature_2m'])) ? $ec['hourly']['temperature_2m'] : [];
+    
+    // Create lookup array for OpenWeather (mapping unix timestamps to temps)
+    $owLookup = [];
+    if ($owForecast && isset($owForecast['list'])) {
+        foreach ($owForecast['list'] as $item) {
+            $owLookup[$item['dt']] = (float)$item['main']['temp'];
+        }
+    }
+
+    for ($i = 0; $i < min(24, count($hourlyTimes)); $i++) {
+        $t = $hourlyTimes[$i];
+        $ts = strtotime($t);
+        
+        $omT = $omTemps[$i] ?? null;
+        $ecT = $ecTemps[$i] ?? null;
+        
+        // Find closest OpenWeather timestamp (it's 3-hour intervals)
+        $owT = null;
+        if (!empty($owLookup)) {
+            $closestDelta = PHP_INT_MAX;
+            $closestTs = null;
+            foreach ($owLookup as $owTs => $owTemp) {
+                $delta = abs($owTs - $ts);
+                if ($delta < $closestDelta) {
+                    $closestDelta = $delta;
+                    $closestTs = $owTs;
+                }
+            }
+            // If the closest forecast is within 1.5 hours, use it
+            if ($closestDelta <= 5400) {
+                $owT = $owLookup[$closestTs];
+            }
+        }
+
+        // Calculate the interpolated mean for this specific hour
+        $validTemps = array_filter([$owT, $omT, $ecT], fn($v) => $v !== null);
+        $meanT = count($validTemps) > 0 ? array_sum($validTemps) / count($validTemps) : null;
+
+        if ($meanT !== null) {
+            $chartData['time'][] = $t;
+            $chartData['ow'][]   = $owT !== null ? round($owT, 1) : null;
+            $chartData['om'][]   = $omT !== null ? round($omT, 1) : null;
+            $chartData['ec'][]   = $ecT !== null ? round($ecT, 1) : null;
+            $chartData['mean'][] = round($meanT, 1);
+        }
+    }
+}
+
 $result = [
     'fetched_at' => date('c'),
     'location'   => ['lat' => WF_LAT, 'lon' => WF_LON],
     'sources'    => $publicSources,
     'bounds'     => $bounds,
+    'chart_data' => $chartData,
     'active'     => count(array_filter($publicSources, fn($s) => $s['available'])),
     'total'      => count($publicSources),
 ];

@@ -1327,7 +1327,7 @@ renderHeader($title);
                     </div>
 
                     <!-- ============================================
-                         MODEL BOUNDS ANALYSIS (WITH VISUALIZATION)
+                         MODEL BOUNDS ANALYSIS (WITH COMPARISON CHART)
                     ============================================ -->
                     <div class="card">
                         <div class="guide-head">
@@ -1379,13 +1379,13 @@ renderHeader($title);
                                 <?php endforeach; ?>
                             </div>
 
-                            <!-- NEW: Chart.js Visualization -->
+                            <!-- Chart.js Comparison Visualization -->
                             <?php if ($chartData && !empty($chartData['time'])): ?>
                             <div style="margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border-2);">
                                 <div style="font-size: 11px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-                                    Temperature Envelope (Next 24h)
+                                    24h Temperature Trendline
                                 </div>
-                                <div style="position: relative; height: 160px; width: 100%;">
+                                <div style="position: relative; height: 200px; width: 100%;">
                                     <canvas id="boundsChart"></canvas>
                                 </div>
                             </div>
@@ -1486,7 +1486,7 @@ renderHeader($title);
     </div>
 </div>
 
-<!-- Chart.js for the Bounds Visualization -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
@@ -1610,7 +1610,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
 })();
 
 // ============================================================
-// BOUNDS CHART (Chart.js)
+// BOUNDS & TRENDLINE COMPARISON CHART (Chart.js)
 // ============================================================
 <?php if ($boundsData && !empty($boundsData['chart_data'])): ?>
 document.addEventListener('DOMContentLoaded', function() {
@@ -1618,7 +1618,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('boundsChart');
     if (!ctx) return;
 
-    // Format time labels (e.g., "14:00")
+    // Format time labels (e.g., "2 PM")
     const labels = chartData.time.map(t => {
         const d = new Date(t);
         return d.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
@@ -1630,26 +1630,47 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: labels,
             datasets: [
                 {
-                    label: 'Upper Bound',
-                    data: chartData.temp_max,
-                    borderColor: 'transparent',
-                    backgroundColor: 'rgba(37, 99, 235, 0.15)', // Light blue fill
+                    label: 'Interpolated Trendline',
+                    data: chartData.mean,
+                    borderColor: '#0f172a', // Dark solid line for the mean
+                    borderWidth: 3,
                     pointRadius: 0,
-                    fill: '+1' // Fills down to the next dataset
+                    pointHoverRadius: 5,
+                    fill: false,
+                    tension: 0.3
                 },
                 {
-                    label: 'Lower Bound',
-                    data: chartData.temp_min,
-                    borderColor: 'transparent',
-                    backgroundColor: 'transparent',
+                    label: 'OpenWeather',
+                    data: chartData.ow,
+                    borderColor: '#f59e0b', // Amber
+                    backgroundColor: '#f59e0b',
+                    borderWidth: 1.5,
+                    borderDash: [5, 5], // Dashed line
                     pointRadius: 0,
-                    fill: false
+                    pointHoverRadius: 4,
+                    fill: false,
+                    tension: 0.3,
+                    spanGaps: true
                 },
                 {
-                    label: 'Interpolated Mean',
-                    data: chartData.temp_mean,
-                    borderColor: '#2563eb', // Solid blue line
-                    borderWidth: 2,
+                    label: 'Open-Meteo',
+                    data: chartData.om,
+                    borderColor: '#3b82f6', // Blue
+                    backgroundColor: '#3b82f6',
+                    borderWidth: 1.5,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    fill: false,
+                    tension: 0.3
+                },
+                {
+                    label: 'ECMWF',
+                    data: chartData.ec,
+                    borderColor: '#10b981', // Green
+                    backgroundColor: '#10b981',
+                    borderWidth: 1.5,
+                    borderDash: [5, 5],
                     pointRadius: 0,
                     pointHoverRadius: 4,
                     fill: false,
@@ -1665,20 +1686,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 intersect: false,
             },
             plugins: {
-                legend: { display: false }, // Hide legend to save space
+                legend: { 
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        font: { size: 10, family: 'system-ui' },
+                        usePointStyle: true,
+                        pointStyle: 'line'
+                    }
+                },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleFont: { size: 11, weight: 'bold' },
-                    bodyFont: { size: 12 },
+                    bodyFont: { size: 11 },
                     padding: 10,
+                    boxPadding: 4,
                     callbacks: {
                         label: function(context) {
-                            if (context.datasetIndex === 2) {
-                                const min = chartData.temp_min[context.dataIndex];
-                                const max = chartData.temp_max[context.dataIndex];
-                                return `Mean: ${context.parsed.y}°C (Bounds: ${min}° – ${max}°)`;
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
                             }
-                            return null; // Hide individual bounds in tooltip
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y + '°C';
+                            }
+                            return label;
                         }
                     }
                 }
@@ -1687,17 +1721,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 x: {
                     grid: { display: false },
                     ticks: {
-                        font: { size: 10 },
+                        font: { size: 9 },
                         color: '#94a3b8',
-                        maxTicksLimit: 6 // Prevents overcrowding on mobile
+                        maxTicksLimit: 6
                     }
                 },
                 y: {
                     grid: { color: '#f1f5f9' },
                     ticks: {
-                        font: { size: 10 },
+                        font: { size: 9 },
                         color: '#94a3b8',
-                        callback: function(value) { return value + '°C'; }
+                        callback: function(value) { return value + '°'; }
                     }
                 }
             }
