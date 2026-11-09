@@ -651,10 +651,10 @@ renderHeader($title);
             <!-- DASHBOARD GRID -->
             <div class="dashboard-grid">
 
-                <!-- LEFT COLUMN -->
+                <!-- ROW 1, LEFT (Heat Index + Hourly Forecast) -->
                 <div class="grid-left">
-
-                    <!-- METRIC STRIP (NEW NON-DUPLICATE METRICS) -->
+                    
+                    <!-- METRIC STRIP (HEAT INDEX) -->
                     <div class="metric-strip">
                         <div class="metric-cell">
                             <div class="metric-label">Heat Index (THI)</div>
@@ -760,111 +760,10 @@ renderHeader($title);
                             <?php endforeach; ?>
                         </div>
                     </div>
-
-                    <!-- 5-DAY FORECAST (MOVED TO LEFT COLUMN) -->
-                    <div class="card" id="forecast">
-                        <div class="guide-head">
-                            <div class="guide-title">5-Day Forecast</div>
-                        </div>
-                        <p class="guide-sub"><?php echo MANOLO_FORTICH_NAME; ?></p>
-
-                        <?php
-                        for ($i = 0; $i < 5; $i++):
-                            if (isset($dailyForecast[$i])) {
-                                $d = $dailyForecast[$i];
-                                $label = $i === 0 ? 'Today' : date('D', $d['dt']);
-                                $iconName = owIconName($d['icon']);
-                                $tempHi = $d['temp_hi'];
-                                $tempLo = $d['temp_lo'];
-                                $pop = $d['pop'];
-                            } else {
-                                $label = $i === 0 ? 'Today' : date('D', strtotime("+$i days"));
-                                $iconName = ['sun','cloud-sun','cloud','cloud-rain','cloud-sun'][$i];
-                                $tempHi = [28, 29, 27, 26, 28][$i];
-                                $tempLo = [22, 23, 22, 21, 22][$i];
-                                $pop = [10, 20, 30, 60, 25][$i];
-                            }
-                        ?>
-                            <div class="forecast-row">
-                                <div class="forecast-day"><?php echo $label; ?></div>
-                                <div class="forecast-icon"><?php echo wxIcon($iconName, 24); ?></div>
-                                <div class="forecast-temps">
-                                    <span class="forecast-hi"><?php echo $tempHi; ?>°</span>
-                                    <span class="forecast-lo"><?php echo $tempLo; ?>°</span>
-                                </div>
-                                <div class="forecast-pop"><?php echo $pop; ?>%</div>
-                            </div>
-                        <?php endfor; ?>
-                    </div>
-
                 </div>
 
-                <!-- RIGHT COLUMN -->
+                <!-- ROW 1, RIGHT (Model Bounds Analysis) -->
                 <div class="grid-right">
-
-                    <!-- ACTION CENTER (CONDENSED) -->
-                    <div class="card">
-                        <div class="guide-head">
-                            <div class="guide-title">Action Center</div>
-                            <span class="guide-badge <?php if ($heat['level'] === 'high') echo 'red'; elseif ($heat['level'] === 'mid') echo 'amber'; else echo 'green'; ?>">Priority</span>
-                        </div>
-                        <p class="guide-sub">Urgent advisories and grazing tips</p>
-
-                        <?php if (!empty($advisories)): ?>
-                            <div class="advisory-section" style="margin-top:0; padding-top:0; border-top:none;">
-                                <div class="advisory-header">
-                                    <div class="advisory-title">
-                                        ⚠️ Active Advisories
-                                        <span class="advisory-count-badge"><?php echo count($advisories); ?></span>
-                                    </div>
-                                    <span class="advisory-priority-badge <?php echo $highestPriority; ?>"><?php echo strtoupper($highestPriority); ?> PRIORITY</span>
-                                </div>
-                                <form method="POST">
-                                    <?php foreach ($advisories as $i => $adv): ?>
-                                        <label class="advisory-option <?php echo $adv['priority']; ?>">
-                                            <input type="radio" name="advisory_index" value="<?php echo $i; ?>" <?php echo $i === 0 ? 'checked' : ''; ?>>
-                                            <span class="advisory-option-title"><?php echo htmlspecialchars($adv['title']); ?></span>
-                                            <p class="advisory-option-msg"><?php echo htmlspecialchars($adv['message']); ?></p>
-                                        </label>
-                                    <?php endforeach; ?>
-                                    <button type="submit" name="send_advisory" class="send-advisory-btn" onclick="return confirm('Ipadala ang SMS advisory sa tanan opted-in farmers?');">📱 Send Advisory via SMS</button>
-                                </form>
-                            </div>
-                        <?php else: ?>
-                            <div class="no-advisory" style="margin-top:0;">
-                                <p>✅ Walay active advisory. Maayo ang panahon para sa goats.</p>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ($sendResult): ?>
-                            <div class="send-result <?php echo $sendResult['success'] ? 'success' : 'failed'; ?>" style="margin-bottom: 12px;">
-                                <strong><?php if ($sendResult['success']): ?>✅ Advisory sent successfully!<?php else: ?>❌ Failed to send advisory<?php endif; ?></strong>
-                                <p><?php if ($sendResult['success']): ?>Sent to <strong><?php echo $sendResult['success_count']; ?></strong> of <strong><?php echo $sendResult['recipient_count']; ?></strong> farmers.<?php else: ?>Error: <?php echo htmlspecialchars($sendResult['error'] ?? 'Unknown error'); ?><?php endif; ?></p>
-                            </div>
-                        <?php endif; ?>
-
-                        <!-- CONDENSED GUIDES -->
-                        <div class="guide-item <?php echo ($temp >= 30 || $hasHighPop) ? 'amber' : 'green'; ?>">
-                            <div class="guide-item-title">Grazing <span class="guide-item-tag"><?php echo $hasHighPop ? 'CAUTION' : ($temp >= 32 ? 'LIMITED' : ($temp >= 30 ? 'CAUTION' : 'SAFE')); ?></span></div>
-                            <div class="guide-item-desc">
-                                <?php if ($hasHighPop): ?>High chance of rain. Prepare to bring goats to shelter.
-                                <?php elseif ($temp >= 32): ?>Too hot for extended grazing. Provide shade and water access.
-                                <?php elseif ($temp >= 30): ?>Safe to graze until 3-4 PM. Provide shade during peak hours.
-                                <?php else: ?>Safe to graze until 4-5 PM. Good conditions for field rotation.<?php endif; ?>
-                            </div>
-                        </div>
-
-                        <div class="guide-item <?php echo ($rainTonight > 2 || $hasHighPop) ? 'amber' : 'green'; ?>">
-                            <div class="guide-item-title">Rain Warning <span class="guide-item-tag"><?php echo $rainTonight > 5 ? 'ACTION' : (($rainTonight > 2 || $hasHighPop) ? 'ADVISORY' : 'NONE'); ?></span></div>
-                            <div class="guide-item-desc">
-                                <?php if ($rainTonight > 5): ?>Heavy rain expected. Bring goats into barn.
-                                <?php elseif ($rainTonight > 2): ?>Rain expected (<?php echo $rainTonight; ?> mm). Bring goats into barn before dark.
-                                <?php elseif ($hasHighPop): ?>High probability of rain. Monitor the sky.
-                                <?php else: ?>Minimal rain expected. Normal care is fine.<?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- MODEL BOUNDS ANALYSIS -->
                     <div class="card">
                         <div class="guide-head">
@@ -935,8 +834,115 @@ renderHeader($title);
                             <div style="padding:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; font-size:12px; color:#b91c1c;"><?php echo htmlspecialchars($boundsError ?: 'Bounds data unavailable'); ?></div>
                         <?php endif; ?>
                     </div>
-
                 </div>
+
+            </div>
+
+            <!-- SECOND GRID (Bottom Row) -->
+            <div class="dashboard-grid" style="margin-top: 20px;">
+
+                <!-- ROW 2, LEFT (5-Day Forecast) -->
+                <div class="grid-left">
+                    <div class="card" id="forecast">
+                        <div class="guide-head">
+                            <div class="guide-title">5-Day Forecast</div>
+                        </div>
+                        <p class="guide-sub"><?php echo MANOLO_FORTICH_NAME; ?></p>
+
+                        <?php
+                        for ($i = 0; $i < 5; $i++):
+                            if (isset($dailyForecast[$i])) {
+                                $d = $dailyForecast[$i];
+                                $label = $i === 0 ? 'Today' : date('D', $d['dt']);
+                                $iconName = owIconName($d['icon']);
+                                $tempHi = $d['temp_hi'];
+                                $tempLo = $d['temp_lo'];
+                                $pop = $d['pop'];
+                            } else {
+                                $label = $i === 0 ? 'Today' : date('D', strtotime("+$i days"));
+                                $iconName = ['sun','cloud-sun','cloud','cloud-rain','cloud-sun'][$i];
+                                $tempHi = [28, 29, 27, 26, 28][$i];
+                                $tempLo = [22, 23, 22, 21, 22][$i];
+                                $pop = [10, 20, 30, 60, 25][$i];
+                            }
+                        ?>
+                            <div class="forecast-row">
+                                <div class="forecast-day"><?php echo $label; ?></div>
+                                <div class="forecast-icon"><?php echo wxIcon($iconName, 24); ?></div>
+                                <div class="forecast-temps">
+                                    <span class="forecast-hi"><?php echo $tempHi; ?>°</span>
+                                    <span class="forecast-lo"><?php echo $tempLo; ?>°</span>
+                                </div>
+                                <div class="forecast-pop"><?php echo $pop; ?>%</div>
+                            </div>
+                        <?php endfor; ?>
+                    </div>
+                </div>
+
+                <!-- ROW 2, RIGHT (Action Center) -->
+                <div class="grid-right">
+                    <div class="card">
+                        <div class="guide-head">
+                            <div class="guide-title">Action Center</div>
+                            <span class="guide-badge <?php if ($heat['level'] === 'high') echo 'red'; elseif ($heat['level'] === 'mid') echo 'amber'; else echo 'green'; ?>">Priority</span>
+                        </div>
+                        <p class="guide-sub">Urgent advisories and grazing tips</p>
+
+                        <?php if (!empty($advisories)): ?>
+                            <div class="advisory-section" style="margin-top:0; padding-top:0; border-top:none;">
+                                <div class="advisory-header">
+                                    <div class="advisory-title">
+                                        ⚠️ Active Advisories
+                                        <span class="advisory-count-badge"><?php echo count($advisories); ?></span>
+                                    </div>
+                                    <span class="advisory-priority-badge <?php echo $highestPriority; ?>"><?php echo strtoupper($highestPriority); ?> PRIORITY</span>
+                                </div>
+                                <form method="POST">
+                                    <?php foreach ($advisories as $i => $adv): ?>
+                                        <label class="advisory-option <?php echo $adv['priority']; ?>">
+                                            <input type="radio" name="advisory_index" value="<?php echo $i; ?>" <?php echo $i === 0 ? 'checked' : ''; ?>>
+                                            <span class="advisory-option-title"><?php echo htmlspecialchars($adv['title']); ?></span>
+                                            <p class="advisory-option-msg"><?php echo htmlspecialchars($adv['message']); ?></p>
+                                        </label>
+                                    <?php endforeach; ?>
+                                    <button type="submit" name="send_advisory" class="send-advisory-btn" onclick="return confirm('Ipadala ang SMS advisory sa tanan opted-in farmers?');">📱 Send Advisory via SMS</button>
+                                </form>
+                            </div>
+                        <?php else: ?>
+                            <div class="no-advisory" style="margin-top:0;">
+                                <p>✅ Walay active advisory. Maayo ang panahon para sa goats.</p>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($sendResult): ?>
+                            <div class="send-result <?php echo $sendResult['success'] ? 'success' : 'failed'; ?>" style="margin-bottom: 12px;">
+                                <strong><?php if ($sendResult['success']): ?>✅ Advisory sent successfully!<?php else: ?>❌ Failed to send advisory<?php endif; ?></strong>
+                                <p><?php if ($sendResult['success']): ?>Sent to <strong><?php echo $sendResult['success_count']; ?></strong> of <strong><?php echo $sendResult['recipient_count']; ?></strong> farmers.<?php else: ?>Error: <?php echo htmlspecialchars($sendResult['error'] ?? 'Unknown error'); ?><?php endif; ?></p>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="guide-item <?php echo ($temp >= 30 || $hasHighPop) ? 'amber' : 'green'; ?>">
+                            <div class="guide-item-title">Grazing <span class="guide-item-tag"><?php echo $hasHighPop ? 'CAUTION' : ($temp >= 32 ? 'LIMITED' : ($temp >= 30 ? 'CAUTION' : 'SAFE')); ?></span></div>
+                            <div class="guide-item-desc">
+                                <?php if ($hasHighPop): ?>High chance of rain. Prepare to bring goats to shelter.
+                                <?php elseif ($temp >= 32): ?>Too hot for extended grazing. Provide shade and water access.
+                                <?php elseif ($temp >= 30): ?>Safe to graze until 3-4 PM. Provide shade during peak hours.
+                                <?php else: ?>Safe to graze until 4-5 PM. Good conditions for field rotation.<?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="guide-item <?php echo ($rainTonight > 2 || $hasHighPop) ? 'amber' : 'green'; ?>">
+                            <div class="guide-item-title">Rain Warning <span class="guide-item-tag"><?php echo $rainTonight > 5 ? 'ACTION' : (($rainTonight > 2 || $hasHighPop) ? 'ADVISORY' : 'NONE'); ?></span></div>
+                            <div class="guide-item-desc">
+                                <?php if ($rainTonight > 5): ?>Heavy rain expected. Bring goats into barn.
+                                <?php elseif ($rainTonight > 2): ?>Rain expected (<?php echo $rainTonight; ?> mm). Bring goats into barn before dark.
+                                <?php elseif ($hasHighPop): ?>High probability of rain. Monitor the sky.
+                                <?php else: ?>Minimal rain expected. Normal care is fine.<?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
         </main>
