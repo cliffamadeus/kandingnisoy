@@ -29,15 +29,21 @@ function wf_cache_set(string $key, $value) {
 }
 
 // ---- generic JSON fetch ----
-function wf_fetch_json(string $url): ?array {
+function wf_fetch_json(string $url, bool $isMetNo = false): ?array {
     $ch = curl_init($url);
+    $headers = [];
+    if ($isMetNo) {
+        // MET Norway requires a valid User-Agent with contact info
+        $headers[] = 'User-Agent: GoatPro/1.0 reconcliffy@gmail.com.com'; 
+    }
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 12,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_USERAGENT      => 'GoatPro/1.0',
+        CURLOPT_USERAGENT      => $isMetNo ? 'GoatPro/1.0 reconcliffy@gmail.com' : 'GoatPro/1.0',
+        CURLOPT_HTTPHEADER     => $headers,
     ]);
     $body = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -76,6 +82,17 @@ if ($ow === null) {
     }
 }
 
+// ---- 1b. OpenWeather (forecast) ----
+$owForecast = wf_cache_get('ow_forecast');
+if ($owForecast === null) {
+    if (defined('OPENWEATHER_API_KEY')) {
+        $url = 'https://api.openweathermap.org/data/2.5/forecast?lat=' . WF_LAT
+             . '&lon=' . WF_LON . '&units=metric&appid=' . OPENWEATHER_API_KEY;
+        $owForecast = wf_fetch_json($url);
+        wf_cache_set('ow_forecast', $owForecast);
+    }
+}
+
 // ---- 2. Open-Meteo (blended multi-model) ----
 $om = wf_cache_get('om');
 if ($om === null) {
@@ -100,6 +117,14 @@ if ($ec === null) {
     wf_cache_set('ec', $ec);
 }
 
+// ---- 4. MET Norway (Locationforecast 2.0) ----
+$metno = wf_cache_get('metno');
+if ($metno === null) {
+    $url = 'https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=' . WF_LAT . '&lon=' . WF_LON;
+    $metno = wf_fetch_json($url, true);
+    wf_cache_set('metno', $metno);
+}
+
 // ---- extract current values per source ----
 $sources = [];
 
@@ -109,7 +134,7 @@ if ($ow && isset($ow['main'])) {
         'available'  => true,
         'temp'       => (float)$ow['main']['temp'],
         'humidity'   => (float)$ow['main']['humidity'],
-        'wind'       => (float)($ow['wind']['speed'] ?? 0) * 3.6, // m/s -> km/h
+        'wind'       => (float)($ow['wind']['speed'] ?? 0) * 3.6,
         'rain'       => (float)($ow['rain']['1h'] ?? $ow['rain']['3h'] ?? 0),
     ];
 } else {
@@ -137,7 +162,7 @@ if ($om && isset($om['current'])) {
     $sources['OpenMeteo'] = ['available' => false];
 }
 
-// ECMWF (via Open-Meteo; only has hourly)
+// ECMWF
 if ($ec && isset($ec['hourly'])) {
     $sources['ECMWF_IFS'] = [
         'available' => true,
@@ -148,6 +173,39 @@ if ($ec && isset($ec['hourly'])) {
     ];
 } else {
     $sources['ECMWF_IFS'] = ['available' => false];
+}
+
+// MET Norway
+if ($metno && isset($metno['properties']['timeseries'])) {
+    $timeseries = $metno['properties']['timeseries'];
+    $now = time();
+    $closest = null;
+    $minDiff = PHP_INT_MAX;
+    
+    foreach ($timeseries as $entry) {
+        $entryTime = strtotime($entry['time']);
+        $diff = abs($entryTime - $now);
+        if ($diff < $minDiff) {
+            $minDiff = $diff;
+            $closest = $entry;
+        }
+    }
+    
+    if ($closest && isset($closest['data']['instant']['details'])) {
+        $details = $closest['data']['instant']['details'];
+        $sources['METNorway'] = [
+            'available' => true,
+            'temp'      => isset($details['air_temperature']) ? (float)$details['air_temperature'] : null,
+            'humidity'  => isset($details['relative_humidity']) ? (float)$details['relative_humidity'] : null,
+            'wind'      => isset($details['wind_speed']) ? (float)$details['wind_speed'] * 3.6 : null,
+            'rain'      => isset($closest['data']['next_1_hours']['details']['precipitation_amount']) 
+                            ? (float)$closest['data']['next_1_hours']['details']['precipitation_amount'] : 0,
+        ];
+    } else {
+        $sources['METNorway'] = ['available' => false];
+    }
+} else {
+    $sources['METNorway'] = ['available' => false];
 }
 
 // ---- compute bounds per variable ----
@@ -192,21 +250,106 @@ foreach ($sources as $name => $s) {
     ];
 }
 
+// ============================================================
+// EXTRACT 24H TRENDLINE DATA FOR COMPARISON CHART
+// ============================================================
+$chartData = [
+    'time' => [], 
+    'ow'   => [], 
+    'om'   => [], 
+    'ec'   => [], 
+    'metno'=> [],
+    'mean' => []  
+];
+
+if ($om && isset($om['hourly']['time'])) {
+    $hourlyTimes = $om['hourly']['time'];
+    $omTemps = $om['hourly']['temperature_2m'] ?? [];
+    $ecTemps = ($ec && isset($ec['hourly']['temperature_2m'])) ? $ec['hourly']['temperature_2m'] : [];
+    
+    // Create lookup arrays
+    $owLookup = [];
+    if ($owForecast && isset($owForecast['list'])) {
+        foreach ($owForecast['list'] as $item) {
+            $owLookup[$item['dt']] = (float)$item['main']['temp'];
+        }
+    }
+
+    $metnoLookup = [];
+    if ($metno && isset($metno['properties']['timeseries'])) {
+        foreach ($metno['properties']['timeseries'] as $entry) {
+            $metnoLookup[strtotime($entry['time'])] = $entry;
+        }
+    }
+
+    for ($i = 0; $i < min(24, count($hourlyTimes)); $i++) {
+        $t = $hourlyTimes[$i];
+        $ts = strtotime($t);
+        
+        $omT = $omTemps[$i] ?? null;
+        $ecT = $ecTemps[$i] ?? null;
+        
+        // Find closest OpenWeather
+        $owT = null;
+        if (!empty($owLookup)) {
+            $closestDelta = PHP_INT_MAX;
+            $closestTs = null;
+            foreach ($owLookup as $owTs => $owTemp) {
+                $delta = abs($owTs - $ts);
+                if ($delta < $closestDelta) {
+                    $closestDelta = $delta;
+                    $closestTs = $owTs;
+                }
+            }
+            if ($closestDelta <= 5400) $owT = $owLookup[$closestTs];
+        }
+
+        // Find closest MET Norway
+        $metnoT = null;
+        if (!empty($metnoLookup)) {
+            $closestDiff = PHP_INT_MAX;
+            $closestTime = null;
+            foreach ($metnoLookup as $mTime => $mEntry) {
+                $diff = abs($mTime - $ts);
+                if ($diff < $closestDiff) {
+                    $closestDiff = $diff;
+                    $closestTime = $mTime;
+                }
+            }
+            if ($closestDiff <= 5400) {
+                $metnoT = $metnoLookup[$closestTime]['data']['instant']['details']['air_temperature'] ?? null;
+            }
+        }
+
+        // Calculate interpolated mean
+        $validTemps = array_filter([$owT, $omT, $ecT, $metnoT], fn($v) => $v !== null);
+        $meanT = count($validTemps) > 0 ? array_sum($validTemps) / count($validTemps) : null;
+
+        if ($meanT !== null) {
+            $chartData['time'][] = $t;
+            $chartData['ow'][]   = $owT !== null ? round($owT, 1) : null;
+            $chartData['om'][]   = $omT !== null ? round($omT, 1) : null;
+            $chartData['ec'][]   = $ecT !== null ? round($ecT, 1) : null;
+            $chartData['metno'][] = $metnoT !== null ? round($metnoT, 1) : null;
+            $chartData['mean'][] = round($meanT, 1);
+        }
+    }
+}
+
 $result = [
     'fetched_at' => date('c'),
     'location'   => ['lat' => WF_LAT, 'lon' => WF_LON],
     'sources'    => $publicSources,
     'bounds'     => $bounds,
+    'chart_data' => $chartData,
     'active'     => count(array_filter($publicSources, fn($s) => $s['available'])),
     'total'      => count($publicSources),
 ];
 
-// If accessed directly via browser, output JSON. If included via PHP, return the array.
 if (basename($_SERVER['SCRIPT_FILENAME']) === 'weather-bounds-proxy.php') {
     header('Content-Type: application/json');
     echo json_encode($result);
 } else {
     return $result;
 }
-
 ?>
