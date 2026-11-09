@@ -1628,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', function() {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [
+                        datasets: [
                 {
                     label: 'Interpolated Trendline',
                     data: chartData.mean,
@@ -1645,7 +1645,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     borderColor: '#f59e0b', // Amber
                     backgroundColor: '#f59e0b',
                     borderWidth: 1.5,
-                    borderDash: [5, 5], // Dashed line
+                    borderDash: [5, 5],
                     pointRadius: 0,
                     pointHoverRadius: 4,
                     fill: false,
@@ -1675,6 +1675,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     pointHoverRadius: 4,
                     fill: false,
                     tension: 0.3
+                },
+                {
+                    label: 'MET Norway',
+                    data: chartData.metno,
+                    borderColor: '#8b5cf6', // Purple
+                    backgroundColor: '#8b5cf6',
+                    borderWidth: 1.5,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    fill: false,
+                    tension: 0.3,
+                    spanGaps: true
                 }
             ]
         },
