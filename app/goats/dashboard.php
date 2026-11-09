@@ -5,20 +5,19 @@ require_once '../../includes/goat-logger.php';
 require_once '../../includes/goat-functions.php';
 requireLogin();
 
-$currentRole = $_SESSION['role'];
+$currentRole   = $_SESSION['role'];
 $currentUserId = $_SESSION['user_id'];
 
-// Search / filter support
-$search = trim($_GET['q'] ?? '');
-$sexFilter = normalizeGoatSex($_GET['sex'] ?? '') ?? '';
-$healthFilter = normalizeHealthStatus($_GET['health_status'] ?? '') ?? '';
-$statusFilter = normalizeGoatStatus($_GET['status'] ?? '') ?? '';
-$farmerFilter = ($currentRole !== 'user') ? (int)($_GET['farmer_id'] ?? 0) : 0;
+// ---------- Search / filter support ----------
+$search        = trim($_GET['q'] ?? '');
+$sexFilter     = normalizeGoatSex($_GET['sex'] ?? '') ?? '';
+$healthFilter  = normalizeHealthStatus($_GET['health_status'] ?? '') ?? '';
+$statusFilter  = normalizeGoatStatus($_GET['status'] ?? '') ?? '';
+$farmerFilter  = ($currentRole !== 'user') ? (int)($_GET['farmer_id'] ?? 0) : 0;
 
-$where = [];
+$where  = [];
 $params = [];
 
-// Ownership scoping
 if ($currentRole === 'user') {
     $where[] = "g.user_id = :self_id";
     $params[':self_id'] = $currentUserId;
@@ -56,12 +55,17 @@ if (!empty($where)) {
 }
 $sql .= " ORDER BY g.updated_at DESC";
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$goats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$goats = [];
+try {
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $goats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log('[Goat Inventory] Main query failed: ' . $e->getMessage());
+}
 
-// Summary statistics
-$scopeWhere = "";
+// ---------- Summary statistics ----------
+$scopeWhere  = "";
 $scopeParams = [];
 if ($currentRole === 'user') {
     $scopeWhere = " WHERE user_id = :self_id";
@@ -71,838 +75,1273 @@ if ($currentRole === 'user') {
     $scopeParams[':farmer_id'] = $farmerFilter;
 }
 
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'active'" : " WHERE status = 'active'"));
-$stmt->execute($scopeParams);
-$activeCount = (int)$stmt->fetchColumn();
+$activeCount = 0;
+try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'active'" : " WHERE status = 'active'"));
+    $stmt->execute($scopeParams);
+    $activeCount = (int)$stmt->fetchColumn();
+} catch (PDOException $e) {
+    error_log('[Goat Inventory] Active count failed: ' . $e->getMessage());
+}
 
-$stmt = $pdo->prepare("SELECT sex, COUNT(*) as c FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'active'" : " WHERE status = 'active'") . " GROUP BY sex");
-$stmt->execute($scopeParams);
 $sexCounts = ['male' => 0, 'female' => 0];
-foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-    $sexCounts[$row['sex']] = (int)$row['c'];
+try {
+    $stmt = $pdo->prepare("SELECT sex, COUNT(*) as c FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'active'" : " WHERE status = 'active'") . " GROUP BY sex");
+    $stmt->execute($scopeParams);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        if (array_key_exists($row['sex'], $sexCounts)) {
+            $sexCounts[$row['sex']] = (int)$row['c'];
+        }
+    }
+} catch (PDOException $e) {
+    error_log('[Goat Inventory] Sex counts failed: ' . $e->getMessage());
 }
 
-$stmt = $pdo->prepare("SELECT health_status, COUNT(*) as c FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'active'" : " WHERE status = 'active'") . " GROUP BY health_status");
-$stmt->execute($scopeParams);
 $healthCounts = ['healthy' => 0, 'sick' => 0, 'unknown' => 0];
-foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-    $healthCounts[$row['health_status']] = (int)$row['c'];
+try {
+    $stmt = $pdo->prepare("SELECT health_status, COUNT(*) as c FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'active'" : " WHERE status = 'active'") . " GROUP BY health_status");
+    $stmt->execute($scopeParams);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        if (array_key_exists($row['health_status'], $healthCounts)) {
+            $healthCounts[$row['health_status']] = (int)$row['c'];
+        } else {
+            $healthCounts['unknown'] += (int)$row['c'];
+        }
+    }
+} catch (PDOException $e) {
+    error_log('[Goat Inventory] Health counts failed: ' . $e->getMessage());
 }
 
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'sold'" : " WHERE status = 'sold'"));
-$stmt->execute($scopeParams);
-$soldCount = (int)$stmt->fetchColumn();
+$soldCount = 0;
+try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'sold'" : " WHERE status = 'sold'"));
+    $stmt->execute($scopeParams);
+    $soldCount = (int)$stmt->fetchColumn();
+} catch (PDOException $e) {
+    error_log('[Goat Inventory] Sold count failed: ' . $e->getMessage());
+}
 
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'deceased'" : " WHERE status = 'deceased'"));
-$stmt->execute($scopeParams);
-$deceasedCount = (int)$stmt->fetchColumn();
+$deceasedCount = 0;
+try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM goats" . $scopeWhere . ($scopeWhere ? " AND status = 'deceased'" : " WHERE status = 'deceased'"));
+    $stmt->execute($scopeParams);
+    $deceasedCount = (int)$stmt->fetchColumn();
+} catch (PDOException $e) {
+    error_log('[Goat Inventory] Deceased count failed: ' . $e->getMessage());
+}
 
-// Farmer list
+// ---------- Farmer list ----------
 $farmers = [];
 if ($currentRole !== 'user') {
-    $farmers = $pdo->query("SELECT id, full_name, username FROM users WHERE role = 'user' ORDER BY full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $farmers = $pdo->query("SELECT id, full_name, username FROM users WHERE role = 'user' ORDER BY full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('[Goat Inventory] Farmer list failed: ' . $e->getMessage());
+    }
 }
+
+$hasActiveFilters = (
+    $search !== '' ||
+    $sexFilter !== '' ||
+    $healthFilter !== '' ||
+    $statusFilter !== '' ||
+    $farmerFilter > 0
+);
 
 $title = 'Goat Inventory';
 renderHeader($title);
 ?>
 
-<!-- ============================================================
-     STYLES – fully aligned with user dashboard
-============================================================ -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
 <style>
-    /* ---------- Reset / safety net ---------- */
+    /* ==========================================================
+       DESIGN TOKENS
+    ========================================================== */
+    :root {
+        --gf-primary: #16a34a;
+        --gf-primary-dark: #14532d;
+        --gf-primary-light: #dcfce7;
+        --gf-bg: #f6f8fb;
+        --gf-surface: #ffffff;
+        --gf-text: #0f172a;
+        --gf-text-secondary: #64748b;
+        --gf-text-muted: #94a3b8;
+        --gf-border: #eaedf2;
+        --gf-border-strong: #dde3ea;
+        --gf-success: #22c55e;
+        --gf-danger: #ef4444;
+        --gf-warning: #f59e0b;
+        --gf-info: #3b82f6;
+        --gf-pink: #ec4899;
+
+        --gf-navbar-height: 68px;
+        --gf-sidebar-width: 264px;
+        --gf-radius: 14px;
+        --gf-radius-sm: 10px;
+
+        --gf-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+        --gf-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+        --gf-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.04);
+        --gf-shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05);
+
+        --gf-ease: cubic-bezier(0.4, 0, 0.2, 1);
+        --gf-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
     *, *::before, *::after { box-sizing: border-box; }
+
     html, body {
-        height: 100%;
-        min-height: 100vh;
         margin: 0;
         padding: 0;
-        background: #f0fdf4;
-        font-size: 16px;
-        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-        overflow-x: hidden;
-        width: 100%;
-    }
-    img, svg { max-width: 100%; height: auto; }
-
-    .main-content {
-        width: 100%;
-        max-width: 100%;
-        padding: 0;
-        margin: 0;
-        min-height: 100vh;
-        background: #f0fdf4;
-        display: block;
-        overflow-x: hidden;
-    }
-    .main-content .container {
-        width: 100%;
-        max-width: 1400px;
-        padding: 16px 12px 28px 12px;
-        margin: 0 auto;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        background: #f0fdf4;
-        box-sizing: border-box;
-    }
-    @media (min-width: 641px) {
-        .main-content .container { padding: 28px 24px 36px 24px; }
-    }
-    @media (min-width: 1024px) {
-        .main-content .container { padding: 40px 36px 40px 36px; }
-    }
-
-    /* ---------- Shared card / button primitives ---------- */
-    .card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        border: 1px solid #dcfce7;
-        padding: 14px;
-        min-width: 0;
-    }
-    @media (min-width: 641px) { .card { padding: 16px 18px; } }
-
-    .card-title {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
+        background: var(--gf-bg);
+        color: var(--gf-text);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         font-size: 15px;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 12px;
-    }
-    @media (min-width: 641px) { .card-title { font-size: 16px; } }
-
-    .badge-sm {
-        font-size: 12px;
-        padding: 4px 12px;
-        border-radius: 999px;
-        font-weight: 600;
-        display: inline-block;
-        white-space: nowrap;
+        line-height: 1.5;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
 
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        min-height: 44px;
-        padding: 10px 18px;
-        border-radius: 999px;
-        font-weight: 500;
-        font-size: 14px;
+    img, svg { max-width: 100%; height: auto; display: block; }
+    button { font-family: inherit; }
+
+    :focus-visible {
+        outline: 2px solid var(--gf-primary);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+
+    .gf-skip-link {
+        position: absolute;
+        top: -100px;
+        left: 16px;
+        z-index: 10000;
+        padding: 10px 16px;
+        background: var(--gf-primary-dark);
+        color: #fff;
         text-decoration: none;
-        transition: all 0.2s;
-        border: none;
-        cursor: pointer;
+        border-radius: var(--gf-radius-sm);
+        font-weight: 700;
     }
-    .btn-primary {
-        background: linear-gradient(145deg, #22C55E, #15803D);
-        color: white;
-        box-shadow: 0 4px 10px rgba(34,197,94,0.25);
-    }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(34,197,94,0.3); }
-    .btn-outline {
-        background: transparent;
-        color: #15803D;
-        border: 1.5px solid #22C55E;
-    }
-    .btn-outline:hover { background: #f0fdf4; }
+    .gf-skip-link:focus { top: 16px; }
 
-    .alert-warning {
-        background: #fef3c7;
-        border-left: 6px solid #f59e0b;
-        padding: 12px 14px;
-        border-radius: 10px;
-        color: #92400e;
-        margin-bottom: 16px;
+    .main-content,
+    .main-content .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: var(--gf-bg) !important;
+        display: block !important;
+    }
+
+    /* ==========================================================
+       NAVBAR
+    ========================================================== */
+    .gf-navbar {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: var(--gf-navbar-height);
+        background: linear-gradient(180deg, #0f3d24 0%, #14532d 45%, #166534 100%);
         display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        font-size: 14px;
-        flex-wrap: wrap;
-    }
-    .alert-warning a {
-        color: #92400e;
-        font-weight: 600;
-        text-decoration: underline;
-        min-height: 44px;
-        display: inline-flex;
         align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        z-index: 1050;
+        box-shadow: 0 2px 12px rgba(15, 23, 42, 0.15);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    /* ---------- Header ---------- */
-    .header-grass {
-        background: linear-gradient(135deg,#22C55E,#15803D);
-        border-radius: 12px;
-        padding: 14px 16px;
-        box-shadow: 0 2px 10px rgba(34,197,94,0.25);
-        margin-bottom: 14px;
-        position: relative;
+    .gf-navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .gf-navbar-logo {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        background: rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        display: grid;
+        place-items: center;
+        font-size: 24px;
+        flex-shrink: 0;
         overflow: hidden;
     }
-    .header-grass .blob-1 { position:absolute; top:-40px; right:-40px; width:120px; height:120px; background:rgba(255,255,255,0.05); border-radius:50%; pointer-events:none; }
-    .header-grass .blob-2 { position:absolute; bottom:-30px; left:-30px; width:80px; height:80px; background:rgba(255,255,255,0.05); border-radius:50%; pointer-events:none; }
-    .header-inner {
+    .gf-navbar-logo img {
+        width: 100%; height: 100%;
+        object-fit: contain;
+        padding: 6px;
+    }
+
+    .gf-navbar-brand-text {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
+        line-height: 1.1;
+    }
+    .gf-navbar-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -0.02em;
+    }
+    .gf-navbar-sub {
+        font-size: 10px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.65);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        margin-top: 2px;
+    }
+
+    .gf-navbar-links {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .gf-navbar-links li a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.82);
+        text-decoration: none;
+        transition: background 0.2s var(--gf-ease), color 0.2s var(--gf-ease);
+        white-space: nowrap;
+    }
+    .gf-navbar-links li a:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+    .gf-navbar-links li a.active {
+        background: #fff;
+        color: var(--gf-primary-dark);
+        font-weight: 700;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    }
+    .gf-navbar-links li a.active i { color: var(--gf-primary); }
+    .gf-navbar-links li a i {
+        width: 16px;
+        height: 16px;
+        opacity: 0.85;
+    }
+    .gf-navbar-links li a.logout { color: #fca5a5; }
+    .gf-navbar-links li a.logout:hover {
+        background: rgba(220, 38, 38, 0.18);
+        color: #fff;
+    }
+
+    .gf-navbar-toggle {
+        display: none;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 10px;
+        cursor: pointer;
+        color: #fff;
+        padding: 0;
+        transition: background 0.15s var(--gf-ease);
+    }
+    .gf-navbar-toggle:hover { background: rgba(255, 255, 255, 0.2); }
+
+    /* ==========================================================
+       SIDEBAR
+    ========================================================== */
+    .gf-sidebar {
+        position: fixed;
+        top: 0; right: 0; bottom: 0;
+        width: var(--gf-sidebar-width);
+        background: linear-gradient(180deg, #0f3d24 0%, #14532d 45%, #166534 100%);
+        padding: 24px 18px 40px;
+        color: #fff;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        z-index: 1060;
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform 0.32s var(--gf-ease-out);
+        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
+    }
+    body.gf-sidebar-open .gf-sidebar { transform: translateX(0); }
+
+    .gf-sidebar-header {
+        display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        position: relative;
-        z-index: 2;
+        padding: 6px 8px 22px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        flex-shrink: 0;
     }
-    .header-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .header-goat { font-size: 32px; display: inline-block; animation: sway 2s ease-in-out infinite; flex-shrink: 0; }
-    .header-grass h1 {
-        font-size: 20px;
-        font-weight: 700;
-        color: white;
-        margin: 0;
+
+    .gf-sidebar-close {
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.15s var(--gf-ease);
+    }
+    .gf-sidebar-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+    .gf-brand {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
+    }
+    .gf-brand-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        background: rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        display: grid;
+        place-items: center;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+    .gf-brand-text {
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+    .gf-brand-sub {
+        font-size: 10px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.65);
+        margin-top: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .gf-nav-section {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 10px;
+    }
+
+    .gf-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 14px;
+        border-radius: 11px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.2s var(--gf-ease), color 0.2s var(--gf-ease),
+                    transform 0.15s var(--gf-ease);
+        position: relative;
+        flex-shrink: 0;
+    }
+    .gf-nav-link i {
+        display: grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        opacity: 0.75;
+    }
+    .gf-nav-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        transform: translateX(-2px);
+    }
+    .gf-nav-link:hover i { opacity: 1; }
+    .gf-nav-link.active {
+        background: #fff;
+        color: var(--gf-primary-dark);
+        font-weight: 700;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    }
+    .gf-nav-link.active i { color: var(--gf-primary); opacity: 1; }
+    .gf-nav-link.active::before {
+        content: '';
+        position: absolute;
+        right: -18px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 60%;
+        background: var(--gf-success);
+        border-radius: 4px 0 0 4px;
+    }
+
+    .gf-nav-link.logout {
+        color: #fca5a5;
+        margin-top: 12px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 0;
+    }
+    .gf-nav-link.logout:hover {
+        background: rgba(220, 38, 38, 0.15);
+        color: #fff;
+        border-radius: 11px;
+    }
+
+    /* ==========================================================
+       MAIN
+    ========================================================== */
+    .gf-main {
+        padding: calc(var(--gf-navbar-height) + 28px) clamp(16px, 3vw, 40px) 100px;
+        min-height: 100vh;
+        width: 100%;
+        max-width: 1280px;
+        margin: 0 auto;
+        animation: gfFadeIn 0.4s var(--gf-ease-out);
+    }
+    @keyframes gfFadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .gf-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
         flex-wrap: wrap;
     }
-    .header-grass p {
+    .gf-page-header h1 {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        line-height: 1.15;
+    }
+    .gf-page-header .gf-subtitle {
+        margin: 6px 0 0;
         font-size: 13px;
-        color: rgba(255,255,255,0.85);
-        margin: 4px 0 0 0;
-        overflow-wrap: anywhere;
+        color: var(--gf-text-secondary);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
-    .header-role-badge {
-        background: rgba(255,255,255,0.2);
-        padding: 2px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 500;
-        color: white;
+    .gf-page-header .gf-subtitle .live-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--gf-success);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+        animation: gfPulse 2s infinite;
     }
-    .header-date-badge {
-        background: rgba(255,255,255,0.15);
-        color: white;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 500;
-        white-space: nowrap;
-    }
-    @media (min-width: 641px) {
-        .header-grass { padding: 16px 20px; }
-        .header-goat { font-size: 38px; }
-        .header-grass h1 { font-size: 24px; }
-        .header-grass p { font-size: 15px; }
-        .header-role-badge { font-size: 14px; padding: 2px 14px; }
-        .header-date-badge { font-size: 14px; }
-    }
-    @media (min-width: 1024px) {
-        .header-grass h1 { font-size: 28px; }
-        .header-grass p { font-size: 16px; }
+    @keyframes gfPulse {
+        0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+        70%  { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
-    /* ---------- Navigation (horizontal scroll on mobile) ---------- */
-    .dash-nav {
+    /* ==========================================================
+       SUMMARY BAR — enhanced
+    ========================================================== */
+    .summary-bar {
         display: flex;
-        gap: 6px;
-        padding: 8px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-        margin-bottom: 14px;
-        border: 1px solid #dcfce7;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        scrollbar-color: #bbf7d0 transparent;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 12px 14px;
+        background: var(--gf-surface);
+        border: 1px solid var(--gf-border);
+        border-radius: var(--gf-radius);
+        box-shadow: var(--gf-shadow-sm);
     }
-    .dash-nav::-webkit-scrollbar { height: 6px; }
-    .dash-nav::-webkit-scrollbar-thumb { background: #bbf7d0; border-radius: 999px; }
-    .dash-nav-link {
-        flex: 0 0 auto;
-        min-height: 44px;
-        padding: 8px 14px;
-        font-size: 14px;
-        color: #4a5568;
-        border-radius: 8px;
-        text-decoration: none;
-        display: flex;
+    .summary-item {
+        display: inline-flex;
         align-items: center;
         gap: 7px;
-        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--gf-text-secondary);
+        background: #f8fafc;
+        border: 1px solid transparent;
         white-space: nowrap;
+        transition: background 0.18s var(--gf-ease), border-color 0.18s var(--gf-ease);
     }
-    .dash-nav-link i { font-size: 15px; color: #22C55E; }
-    .dash-nav-link.active { background: #f0fdf4; color: #22C55E; }
-    .dash-nav-link.logout { color: #ef4444; }
-    .dash-nav-link.logout i { color: #ef4444; }
-    .dash-nav-link.logout { margin-left: auto; }
-    @media (min-width: 641px) {
-        .dash-nav { overflow-x: visible; padding: 10px 16px; }
-        .dash-nav-link { font-size: 15px; padding: 8px 16px; }
-        .dash-nav-link i { font-size: 16px; }
+    .summary-item:hover {
+        background: #f1f5f9;
+        border-color: var(--gf-border-strong);
     }
+    .summary-item strong {
+        color: var(--gf-text);
+        font-weight: 800;
+        font-size: 13px;
+        letter-spacing: -0.01em;
+    }
+    .summary-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .dot-green  { background: var(--gf-success); }
+    .dot-blue   { background: var(--gf-info); }
+    .dot-pink   { background: var(--gf-pink); }
+    .dot-red    { background: var(--gf-danger); }
+    .dot-amber  { background: var(--gf-warning); }
+    .dot-gray   { background: var(--gf-text-muted); }
 
-    /* ---------- Stat cards (matching dashboard) ---------- */
-    .stat-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        margin-bottom: 16px;
-    }
-    @media (min-width: 641px) {
-        .stat-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
-    }
-    @media (min-width: 1024px) {
-        .stat-grid { grid-template-columns: repeat(7, 1fr); }
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 12px 14px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-        border-left: 5px solid #22C55E;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-    }
-    .stat-card i { font-size: 20px; flex-shrink: 0; }
-    .stat-card .stat-text { min-width: 0; }
-    .stat-card .number {
-        font-size: 22px;
-        font-weight: 700;
-        color: #1a202c;
-        line-height: 1.2;
-        overflow-wrap: anywhere;
-    }
-    .stat-card .label {
-        font-size: 11.5px;
-        color: #718096;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-    }
-    @media (min-width: 641px) {
-        .stat-card { padding: 14px 16px; }
-        .stat-card i { font-size: 22px; }
-        .stat-card .number { font-size: 28px; }
-        .stat-card .label { font-size: 13px; }
-    }
-    @media (min-width: 1024px) {
-        .stat-card .number { font-size: 32px; }
-    }
-
-    /* ---------- Filter form ---------- */
+    /* ==========================================================
+       FILTER FORM — enhanced
+    ========================================================== */
     .filter-form {
-        background: white;
-        border-radius: 12px;
+        background: var(--gf-surface);
+        border-radius: var(--gf-radius);
         padding: 14px;
-        border: 1px solid #dcfce7;
-        margin-bottom: 12px;
+        border: 1px solid var(--gf-border);
+        box-shadow: var(--gf-shadow-sm);
+        margin-bottom: 20px;
     }
-    .filter-form .filter-group {
+    .filter-group {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
         align-items: flex-end;
     }
-    .filter-form .filter-group > div {
-        flex: 1 1 140px;
-        min-width: 100px;
+    .filter-group > div {
+        flex: 1 1 150px;
+        min-width: 120px;
     }
-    .filter-form label {
-        font-size: 11px;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .filter-group label {
         display: block;
-        margin-bottom: 3px;
+        margin-bottom: 5px;
+        color: var(--gf-text-secondary);
+        font-size: 10.5px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
     }
-    .filter-form input, .filter-form select {
+    .filter-group input,
+    .filter-group select {
         width: 100%;
-        padding: 8px 12px;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 14px;
-        background: white;
-        color: #1e293b;
-        transition: border-color 0.2s;
+        padding: 9px 12px;
+        border: 1px solid var(--gf-border-strong);
+        border-radius: var(--gf-radius-sm);
+        font-size: 13.5px;
+        font-family: inherit;
+        background: #fff;
+        color: var(--gf-text);
+        transition: border-color 0.15s var(--gf-ease),
+                    box-shadow 0.15s var(--gf-ease),
+                    background 0.15s var(--gf-ease);
     }
-    .filter-form input:focus, .filter-form select:focus {
-        border-color: #22C55E;
+    .filter-group input:hover,
+    .filter-group select:hover {
+        border-color: #c7d0db;
+    }
+    .filter-group input:focus,
+    .filter-group select:focus {
+        border-color: var(--gf-primary);
         outline: none;
-        box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
     }
-    .filter-form .btn {
-        height: 44px;
-        padding: 0 20px;
+    .filter-group input::placeholder {
+        color: var(--gf-text-muted);
+    }
+    .filter-actions {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 8px;
+        align-items: center;
     }
 
-    /* ---------- Goat cards ---------- */
+    /* ==========================================================
+       BUTTONS — enhanced
+    ========================================================== */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        gap: 7px;
+        padding: 9px 16px;
+        border-radius: var(--gf-radius-sm);
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 0.18s var(--gf-ease),
+                    border-color 0.18s var(--gf-ease),
+                    box-shadow 0.18s var(--gf-ease),
+                    transform 0.12s var(--gf-ease);
+    }
+    .btn i { width: 14px; height: 14px; }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary {
+        background: var(--gf-primary);
+        color: #fff;
+        border-color: var(--gf-primary);
+        box-shadow: 0 2px 6px rgba(22, 163, 74, 0.22);
+    }
+    .btn-primary:hover {
+        background: #15803d;
+        border-color: #15803d;
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28);
+        transform: translateY(-1px);
+    }
+
+    .btn-outline {
+        background: #fff;
+        color: var(--gf-primary);
+        border-color: var(--gf-border-strong);
+    }
+    .btn-outline:hover {
+        background: #f0fdf4;
+        border-color: #86efac;
+        color: #15803d;
+        transform: translateY(-1px);
+    }
+
+    /* ==========================================================
+       GOAT GRID — enhanced
+    ========================================================== */
     .goat-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 12px;
-    }
-    @media (min-width: 641px) {
-        .goat-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 14px;
     }
 
     .goat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 14px 16px;
-        border: 1px solid #dcfce7;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        background: var(--gf-surface);
+        border: 1px solid var(--gf-border);
+        border-radius: var(--gf-radius);
+        overflow: hidden;
+        box-shadow: var(--gf-shadow-xs);
+        transition: border-color 0.2s var(--gf-ease),
+                    box-shadow 0.2s var(--gf-ease),
+                    transform 0.2s var(--gf-ease-out);
         min-width: 0;
     }
     .goat-card:hover {
+        border-color: #a7f3d0;
+        box-shadow: var(--gf-shadow-md);
         transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(34,197,94,0.12);
     }
 
-    /* ---------- Goat card photo ---------- */
     .goat-card-photo {
+        position: relative;
         width: 100%;
-        height: 160px;
-        border-radius: 10px;
-        overflow: hidden;
-        background: #f0fdf4;
-        margin-bottom: 10px;
+        height: 170px;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px solid #dcfce7;
-        position: relative;
+        overflow: hidden;
     }
     .goat-card-photo img {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
         display: block;
+        transition: transform 0.4s var(--gf-ease-out);
+    }
+    .goat-card:hover .goat-card-photo img {
+        transform: scale(1.04);
     }
     .goat-card-photo .no-photo {
-        color: #bbf7d0;
-        font-size: 42px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 4px;
-        width: 100%;
-        height: 100%;
+        color: #86efac;
     }
+    .goat-card-photo .no-photo i { width: 34px; height: 34px; }
     .goat-card-photo .no-photo span {
-        font-size: 11px;
-        color: #94a3b8;
-        letter-spacing: 0.4px;
+        font-size: 10px;
+        color: var(--gf-text-muted);
         text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
     }
 
-    .goat-card-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .goat-card-id {
-        font-size: 15px;
-        font-weight: 700;
-        color: #16a34a;
-        text-decoration: none;
-        display: flex;
+    /* Health indicator strip on top of the photo */
+    .goat-card-photo .health-strip {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: inline-flex;
         align-items: center;
-        gap: 6px;
-        min-height: 44px;
+        gap: 5px;
+        padding: 4px 9px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+        color: var(--gf-text);
     }
+    .goat-card-photo .health-strip .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+
+    .goat-card-body {
+        padding: 14px 16px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+    }
+
+    .goat-card-id {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--gf-primary);
+        font-size: 11.5px;
+        font-weight: 800;
+        text-decoration: none;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: color 0.15s var(--gf-ease);
+    }
+    .goat-card-id i { width: 12px; height: 12px; }
+    .goat-card-id:hover { color: #15803d; }
+
     .goat-card-name {
-        font-size: 17px;
-        font-weight: 600;
-        color: #1e293b;
-        margin-top: 2px;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--gf-text);
+        line-height: 1.3;
+        letter-spacing: -0.01em;
         overflow-wrap: anywhere;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
-    .goat-card-date {
+    .goat-card-name .tag-num {
         font-size: 12px;
-        color: #94a3b8;
+        color: var(--gf-text-muted);
+        font-weight: 500;
+    }
+
+    .goat-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 2px;
+    }
+
+    .meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: #f8fafc;
+        border: 1px solid var(--gf-border);
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--gf-text-secondary);
         white-space: nowrap;
     }
-    .goat-card-badges {
-        display: flex;
-        gap: 8px;
-        margin-top: 8px;
-        flex-wrap: wrap;
+    .meta-pill .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
     }
-    .goat-badge {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 3px 12px;
-        border-radius: 999px;
-        display: inline-block;
+    .meta-pill.owner {
+        background: #f1f5f9;
+        color: #475569;
     }
-    .health-dot {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        margin-right: 4px;
-        vertical-align: middle;
-    }
-    .health-dot.healthy { background: #22C55E; }
-    .health-dot.sick { background: #ef4444; }
-    .health-dot.unknown { background: #94a3b8; }
 
-    .goat-actions {
+    .goat-card-actions {
         display: flex;
         gap: 8px;
-        margin-top: 10px;
+        margin-top: auto;
         padding-top: 10px;
-        border-top: 1px solid #f0fdf4;
+        border-top: 1px solid #f1f5f9;
     }
-    .goat-actions .btn {
+    .goat-card-actions .btn {
         flex: 1;
-        justify-content: center;
-        font-size: 13px;
-        padding: 6px 12px;
-        min-height: 38px;
+        min-height: 36px;
+        font-size: 12.5px;
+        padding: 7px 12px;
     }
 
-    /* ---------- Empty state ---------- */
+    /* ==========================================================
+       EMPTY STATE
+    ========================================================== */
     .empty-state {
+        padding: 56px 24px;
+        background: var(--gf-surface);
+        border: 2px dashed var(--gf-border-strong);
+        border-radius: var(--gf-radius);
         text-align: center;
-        padding: 40px 20px;
-        color: #a0aec0;
+        color: var(--gf-text-secondary);
     }
-    .empty-state i {
-        font-size: 56px;
-        color: #bbf7d0;
-        display: block;
+    .empty-state .empty-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        color: #22c55e;
         margin-bottom: 14px;
     }
+    .empty-state .empty-icon i { width: 32px; height: 32px; }
     .empty-state p {
-        font-size: 18px;
         margin: 0;
-        color: #4a5568;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--gf-text);
+        letter-spacing: -0.01em;
     }
     .empty-state .sub {
-        font-size: 15px;
-        color: #a0aec0;
         margin-top: 6px;
+        font-size: 13px;
+        color: var(--gf-text-muted);
+    }
+    .empty-state .btn { margin-top: 18px; }
+
+    /* ==========================================================
+       BACKDROP
+    ========================================================== */
+    .gf-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 1055;
+        cursor: pointer;
+    }
+    body.gf-sidebar-open .gf-backdrop {
+        display: block;
+        animation: gfFadeIn 0.2s var(--gf-ease);
     }
 
-    /* ---------- Animation ---------- */
-    @keyframes sway { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+    /* ==========================================================
+       RESPONSIVE
+    ========================================================== */
+    @media (max-width: 991.98px) {
+        .gf-navbar { padding: 0 16px; }
+        .gf-navbar-links { display: none; }
+        .gf-navbar-toggle { display: grid; }
+        .gf-main { padding-top: calc(var(--gf-navbar-height) + 20px); }
+    }
+
+    @media (max-width: 767.98px) {
+        .gf-navbar { height: 60px; padding: 0 12px; }
+        .gf-navbar-logo { width: 38px; height: 38px; border-radius: 11px; font-size: 20px; }
+        .gf-navbar-title { font-size: 17px; }
+        .gf-navbar-sub { font-size: 9px; }
+        .gf-main { padding: calc(var(--gf-navbar-height) + 14px) 12px 100px; }
+        .gf-page-header h1 { font-size: 20px; }
+        .goat-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+        .goat-card-photo { height: 140px; }
+        .goat-card-body { padding: 12px; }
+        .goat-card-name { font-size: 14px; }
+        .filter-group .filter-actions { width: 100%; }
+        .filter-group .filter-actions .btn { flex: 1; }
+    }
+
+    @media (max-width: 430px) {
+        .goat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .goat-card-photo { height: 120px; }
+        .goat-card-name { font-size: 13px; }
+        .goat-card-actions .btn { font-size: 11px; padding: 6px 8px; }
+        .meta-pill { font-size: 10px; padding: 3px 7px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+        }
+    }
 </style>
 
-<!-- ============================================================
-     MAIN CONTENT
-============================================================ -->
-<div class="dashboard-wrap" style="width:100%;display:flex;flex-direction:column;background:#f0fdf4;">
+<a href="#main-content" class="gf-skip-link">Skip to main content</a>
 
-    <!-- ===== HEADER ===== -->
-    <div class="header-grass">
-        <div class="blob-1"></div>
-        <div class="blob-2"></div>
-        <div class="header-inner">
-            <div class="header-title-row">
-                <span class="header-goat">🐐</span>
-                <div style="min-width:0;">
-                    <h1>
-                        Goat Inventory
-                        <span class="header-role-badge"><?php echo ucfirst($currentRole); ?></span>
-                    </h1>
-                    <p>
-                        <i class="fas fa-leaf" style="font-size:12px;"></i> <?php echo count($goats); ?> goat<?php echo count($goats) != 1 ? 's' : ''; ?> found
-                    </p>
-                </div>
-            </div>
-            <div>
-                <span class="header-date-badge">
-                    <i class="fas fa-calendar-alt"></i> <?php echo date('M d, Y'); ?>
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== NAVIGATION (ALL LABELS VISIBLE ON MOBILE) ===== -->
-    <?php
-    // Determine dashboard link based on role
-    $dashboardLink = BASE_URL . '/app/' . $currentRole . '/dashboard.php';
-    ?>
-    <nav class="dash-nav">
-        <a href="<?php echo $dashboardLink; ?>" class="dash-nav-link">
-            <i class="fas fa-tachometer-alt"></i> Dashboard
-        </a>
-        <a href="<?php echo BASE_URL; ?>/app/goats/dashboard.php" class="dash-nav-link active">
-            <i class="fas fa-goat"></i> Inventory
-        </a>
-        <?php if ($currentRole === 'user' || $currentRole === 'admin'): ?>
-            <a href="<?php echo BASE_URL; ?>/app/goats/goat-create.php" class="dash-nav-link">
-                <i class="fas fa-plus-circle"></i> Add Goat
-            </a>
-        <?php endif; ?>
-        <?php if ($currentRole === 'manager' || $currentRole === 'admin'): ?>
-            <a href="<?php echo BASE_URL; ?>/app/goats/farmer-overview.php" class="dash-nav-link">
-                <i class="fas fa-tractor"></i> Farmers
-            </a>
-        <?php endif; ?>
-        <a href="<?php echo BASE_URL; ?>/app/auth/signout.php" class="dash-nav-link logout">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
-    </nav>
-
-    <!-- ===== SICK ALERT ===== -->
-    <?php if ($healthCounts['sick'] > 0): ?>
-    <div class="alert-warning">
-        <i class="fas fa-exclamation-triangle" style="font-size:18px;color:#d97706;flex-shrink:0;"></i>
-        <div>
-            <strong>⚠️ Health Alert:</strong> You have <strong><?php echo $healthCounts['sick']; ?></strong> sick goat(s). Please check their health status and provide care.
-            <a href="?health_status=sick">View sick goats →</a>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- ===== STATS CARDS ===== -->
-    <div class="stat-grid">
-        <div class="stat-card" style="border-left-color:#22C55E;">
-            <i class="fas fa-check-circle" style="color:#22C55E;"></i>
-            <div class="stat-text">
-                <div class="number"><?php echo $activeCount; ?></div>
-                <div class="label">Active</div>
-            </div>
-        </div>
-        <div class="stat-card" style="border-left-color:#3b82f6;">
-            <i class="fas fa-venus-mars" style="color:#3b82f6;"></i>
-            <div class="stat-text">
-                <div class="number"><?php echo $sexCounts['male']; ?>/<?php echo $sexCounts['female']; ?></div>
-                <div class="label">Male/Female</div>
-            </div>
-        </div>
-        <div class="stat-card" style="border-left-color:#4ADE80;">
-            <i class="fas fa-heart" style="color:#4ADE80;"></i>
-            <div class="stat-text">
-                <div class="number"><?php echo $healthCounts['healthy']; ?></div>
-                <div class="label">Healthy</div>
-            </div>
-        </div>
-        <div class="stat-card" style="border-left-color:#ef4444;">
-            <i class="fas fa-medkit" style="color:#ef4444;"></i>
-            <div class="stat-text">
-                <div class="number"><?php echo $healthCounts['sick']; ?></div>
-                <div class="label">Sick</div>
-            </div>
-        </div>
-        <div class="stat-card" style="border-left-color:#94a3b8;">
-            <i class="fas fa-question-circle" style="color:#94a3b8;"></i>
-            <div class="stat-text">
-                <div class="number"><?php echo $healthCounts['unknown']; ?></div>
-                <div class="label">Unknown</div>
-            </div>
-        </div>
-        <div class="stat-card" style="border-left-color:#f59e0b;">
-            <i class="fas fa-hand-holding-usd" style="color:#f59e0b;"></i>
-            <div class="stat-text">
-                <div class="number"><?php echo $soldCount; ?></div>
-                <div class="label">Sold</div>
-            </div>
-        </div>
-        <div class="stat-card" style="border-left-color:#9ca3af;">
-            <i class="fas fa-skull" style="color:#9ca3af;"></i>
-            <div class="stat-text">
-                <div class="number"><?php echo $deceasedCount; ?></div>
-                <div class="label">Deceased</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== FILTER FORM ===== -->
-    <form method="GET" class="filter-form">
-        <div class="filter-group">
-            <div>
-                <label for="q"><i class="fas fa-search"></i> Search</label>
-                <input type="text" id="q" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="ID, name, tag...">
-            </div>
-            <?php if ($currentRole !== 'user'): ?>
-            <div>
-                <label for="farmer_id"><i class="fas fa-user"></i> Farmer</label>
-                <select id="farmer_id" name="farmer_id">
-                    <option value="">All Farmers</option>
-                    <?php foreach ($farmers as $f): ?>
-                        <option value="<?php echo $f['id']; ?>" <?php echo $farmerFilter === (int)$f['id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($f['full_name']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+<!-- ============ NAVBAR ============ -->
+<nav class="gf-navbar" aria-label="Main navigation">
+    <a href="<?php echo BASE_URL; ?>/app/<?php echo htmlspecialchars($currentRole); ?>/dashboard.php" class="gf-navbar-brand">
+        <div class="gf-navbar-logo">
+              <?php if (file_exists(__DIR__ . '/../../assets/images/goat-logo.png')): ?>
+                <img src="<?php echo BASE_URL; ?>/assets/images/goat-logo.png" alt="GoatPro Logo">
+            <?php else: ?>
+                <span aria-hidden="true">🐐</span>
             <?php endif; ?>
-            <div>
-                <label for="sex"><i class="fas fa-venus-mars"></i> Sex</label>
-                <select id="sex" name="sex">
-                    <option value="">All</option>
-                    <option value="male" <?php echo $sexFilter === 'male' ? 'selected' : ''; ?>>Male</option>
-                    <option value="female" <?php echo $sexFilter === 'female' ? 'selected' : ''; ?>>Female</option>
-                </select>
+        </div>
+        <div class="gf-navbar-brand-text">
+            <span class="gf-navbar-title">GoatPro</span>
+                
             </div>
-            <div>
-                <label for="health_status"><i class="fas fa-heartbeat"></i> Health</label>
-                <select id="health_status" name="health_status">
-                    <option value="">All</option>
-                    <option value="healthy" <?php echo $healthFilter === 'healthy' ? 'selected' : ''; ?>>Healthy</option>
-                    <option value="sick" <?php echo $healthFilter === 'sick' ? 'selected' : ''; ?>>Sick</option>
-                    <option value="unknown" <?php echo $healthFilter === 'unknown' ? 'selected' : ''; ?>>Unknown</option>
-                </select>
-            </div>
-            <div>
-                <label for="status"><i class="fas fa-tag"></i> Status</label>
-                <select id="status" name="status">
-                    <option value="">All</option>
-                    <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option>
-                    <option value="sold" <?php echo $statusFilter === 'sold' ? 'selected' : ''; ?>>Sold</option>
-                    <option value="deceased" <?php echo $statusFilter === 'deceased' ? 'selected' : ''; ?>>Deceased</option>
-                </select>
-            </div>
-            <div style="flex:0 0 auto;display:flex;gap:6px;align-items:center;">
-                <button type="submit" class="btn btn-primary" style="height:44px;padding:0 20px;">
-                    <i class="fas fa-search"></i> Search
-                </button>
-                <?php if ($search !== '' || $sexFilter !== '' || $healthFilter !== '' || $statusFilter !== '' || $farmerFilter > 0): ?>
-                    <a href="<?php echo BASE_URL; ?>/app/goats/dashboard.php" class="btn btn-outline" style="height:44px;padding:0 18px;display:inline-flex;align-items:center;">
-                        <i class="fas fa-times"></i> Clear
-                    </a>
+    </a>
+
+    <ul class="gf-navbar-links">
+        <?php gfRenderNavbarLinks($_SESSION['role'] ?? '', 'inventory'); ?>
+    </ul>
+
+    <button class="gf-navbar-toggle"
+            type="button"
+            aria-label="Open menu"
+            aria-controls="gfSidebar"
+            aria-expanded="false"
+            onclick="toggleSidebar();">
+        <i data-lucide="menu" aria-hidden="true" style="width:22px;height:22px;"></i>
+    </button>
+</nav>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="gf-sidebar" id="gfSidebar" aria-label="Main navigation">
+    <div class="gf-sidebar-header">
+        <div class="gf-brand">
+            <div class="gf-brand-icon" aria-hidden="true">
+                <?php if (file_exists(__DIR__ . '/../../assets/img/goatpro-logo.png')): ?>
+                    <img src="<?php echo BASE_URL; ?>/assets/img/goatpro-logo.png" alt="" style="width:100%;height:100%;object-fit:contain;padding:5px;">
+                <?php else: ?>
+                    🐐
                 <?php endif; ?>
             </div>
+            <div>
+                <div class="gf-brand-text">GoatPro</div>
+                <div class="gf-brand-sub">Farmer</div>
+            </div>
         </div>
-    </form>
-
-    <!-- ===== ADD GOAT BUTTON (if allowed) ===== -->
-    <?php if ($currentRole === 'user' || $currentRole === 'admin'): ?>
-    <div style="margin-bottom:16px;">
-        <a href="<?php echo BASE_URL; ?>/app/goats/goat-create.php" class="btn btn-primary" style="padding:12px 28px;font-size:16px;width:100%;justify-content:center;">
-            <i class="fas fa-plus-circle" style="font-size:18px;"></i> Add New Goat
-        </a>
+        <button class="gf-sidebar-close"
+                type="button"
+                aria-label="Close menu"
+                onclick="closeSidebar();">
+            <i data-lucide="x" aria-hidden="true" style="width:18px;height:18px;"></i>
+        </button>
     </div>
-    <?php endif; ?>
 
-    <!-- ===== GOAT LIST ===== -->
-    <?php if (empty($goats)): ?>
-        <div class="card empty-state">
-            <i class="fas fa-goat"></i>
-            <p>No goat records found.</p>
-            <div class="sub">Try adjusting your search filters or add a new goat.</div>
-            <?php if ($currentRole === 'user' || $currentRole === 'admin'): ?>
-                <a href="<?php echo BASE_URL; ?>/app/goats/goat-create.php" class="btn btn-primary" style="margin-top:12px;">
-                    <i class="fas fa-plus-circle"></i> Add Your First Goat
-                </a>
-            <?php endif; ?>
-        </div>
-    <?php else: ?>
-        <div class="goat-grid">
-            <?php foreach ($goats as $goat):
-                $healthColor = $goat['health_status'] === 'healthy' ? '#22C55E' : ($goat['health_status'] === 'sick' ? '#ef4444' : '#94a3b8');
-                $healthBg = $goat['health_status'] === 'healthy' ? '#dcfce7' : ($goat['health_status'] === 'sick' ? '#fef3c7' : '#f3f4f6');
-                $healthText = $goat['health_status'] === 'healthy' ? '#166534' : ($goat['health_status'] === 'sick' ? '#d97706' : '#6b7280');
-                $sexColor = $goat['sex'] === 'male' ? '#2563eb' : '#db2777';
-                $sexBg = $goat['sex'] === 'male' ? '#dbeafe' : '#fce7f3';
-                $canEdit = canEditGoat($currentRole, $currentUserId, $goat['user_id']);
+    <nav class="gf-nav-section">
+        <?php gfRenderSidebarLinks($_SESSION['role'] ?? '', 'inventory'); ?>
+    </nav>
+</aside>
 
-                // --- Photo handling ---
-                // Same pattern as the working user dashboard: photo_path is stored
-                // relative to /app/goats/, so we build the URL the same way here.
-                $photoPath = trim($goat['photo_path'] ?? '');
-                $hasPhoto = $photoPath !== '';
+<div class="gf-backdrop" onclick="closeSidebar();"></div>
 
-                if ($hasPhoto) {
-                    if (preg_match('#^https?://#i', $photoPath)) {
-                        // Already a full URL — use as-is
-                        $photoUrl = $photoPath;
-                    } else {
-                        // Matches the working dashboard: BASE_URL + /app/goats/ + photo_path
-                        $photoUrl = rtrim(BASE_URL, '/') . '/app/goats/' . ltrim($photoPath, '/');
-                    }
-                }
-            ?>
-                <div class="goat-card" style="border-left:5px solid <?php echo $healthColor; ?>;">
+<!-- ============ MAIN ============ -->
+<div class="main-content" id="main-content">
+    <div class="container">
+        <main class="gf-main">
 
-                    <!-- ===== PHOTO ===== -->
-                    <div class="goat-card-photo">
-                        <?php if ($hasPhoto): ?>
-                            <img
-                                src="<?php echo htmlspecialchars($photoUrl); ?>"
-                                alt="<?php echo htmlspecialchars($goat['goat_name']); ?>"
-                                loading="lazy"
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                            >
-                            <div class="no-photo" style="display:none;">
-                                <i class="fas fa-image"></i>
-                                <span>No photo</span>
-                            </div>
-                        <?php else: ?>
-                            <div class="no-photo">
-                                <i class="fas fa-image"></i>
-                                <span>No photo</span>
-                            </div>
-                        <?php endif; ?>
+            <header class="gf-page-header">
+                <div>
+                    <h1>Goat Inventory</h1>
+                    <p class="gf-subtitle">
+                        <span class="live-dot" aria-hidden="true"></span>
+                        <?php
+                            $goatCount = count($goats);
+                            echo $goatCount . ' goat' . ($goatCount === 1 ? '' : 's') . ' found';
+                        ?>
+                    </p>
+                </div>
+                <?php if (in_array($currentRole, ['user', 'admin'], true)): ?>
+                    <a href="<?php echo BASE_URL; ?>/app/goats/goat-create.php" class="btn btn-primary">
+                        <i data-lucide="plus" aria-hidden="true"></i>
+                        Add Goat
+                    </a>
+                <?php endif; ?>
+            </header>
+
+            <!-- ===== SUMMARY BAR ===== -->
+            <div class="summary-bar" role="status" aria-label="Inventory summary">
+                <span class="summary-item">
+                    <span class="summary-dot dot-green"></span>
+                    Active <strong><?php echo $activeCount; ?></strong>
+                </span>
+                <span class="summary-item">
+                    <span class="summary-dot dot-blue"></span>
+                    Male <strong><?php echo $sexCounts['male']; ?></strong>
+                </span>
+                <span class="summary-item">
+                    <span class="summary-dot dot-pink"></span>
+                    Female <strong><?php echo $sexCounts['female']; ?></strong>
+                </span>
+                <span class="summary-item">
+                    <span class="summary-dot dot-green"></span>
+                    Healthy <strong><?php echo $healthCounts['healthy']; ?></strong>
+                </span>
+                <?php if ($healthCounts['sick'] > 0): ?>
+                    <span class="summary-item">
+                        <span class="summary-dot dot-red"></span>
+                        Sick <strong style="color:#dc2626;"><?php echo $healthCounts['sick']; ?></strong>
+                    </span>
+                <?php endif; ?>
+                <?php if ($healthCounts['unknown'] > 0): ?>
+                    <span class="summary-item">
+                        <span class="summary-dot dot-gray"></span>
+                        Unknown <strong><?php echo $healthCounts['unknown']; ?></strong>
+                    </span>
+                <?php endif; ?>
+                <?php if ($soldCount > 0): ?>
+                    <span class="summary-item">
+                        <span class="summary-dot dot-amber"></span>
+                        Sold <strong><?php echo $soldCount; ?></strong>
+                    </span>
+                <?php endif; ?>
+                <?php if ($deceasedCount > 0): ?>
+                    <span class="summary-item">
+                        <span class="summary-dot dot-gray"></span>
+                        Deceased <strong><?php echo $deceasedCount; ?></strong>
+                    </span>
+                <?php endif; ?>
+            </div>
+
+            <!-- ===== FILTER FORM ===== -->
+            <form method="GET" class="filter-form" role="search">
+                <div class="filter-group">
+                    <div>
+                        <label for="q">Search</label>
+                        <input type="text" id="q" name="q"
+                               value="<?php echo htmlspecialchars($search); ?>"
+                               placeholder="ID, name, tag..."
+                               autocomplete="off">
                     </div>
 
-                    <div class="goat-card-top">
-                        <div style="min-width:0;">
-                            <a href="goat-view.php?id=<?php echo urlencode($goat['id']); ?>" class="goat-card-id">
-                                <i class="fas fa-tag" style="color:#86efac;font-size:12px;"></i> <?php echo htmlspecialchars($goat['goat_id']); ?>
-                            </a>
-                            <div class="goat-card-name">
-                                <?php echo htmlspecialchars($goat['goat_name']); ?>
-                                <?php if ($goat['tag_number']): ?>
-                                    <span style="font-size:13px;color:#94a3b8;font-weight:400;">(<?php echo htmlspecialchars($goat['tag_number']); ?>)</span>
-                                <?php endif; ?>
-                            </div>
+                    <?php if ($currentRole !== 'user'): ?>
+                        <div>
+                            <label for="farmer_id">Farmer</label>
+                            <select id="farmer_id" name="farmer_id">
+                                <option value="">All Farmers</option>
+                                <?php foreach ($farmers as $f): ?>
+                                    <option value="<?php echo (int)$f['id']; ?>"
+                                            <?php echo $farmerFilter === (int)$f['id'] ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($f['full_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                        <span class="goat-card-date">
-                            <i class="fas fa-calendar-alt"></i> <?php echo date('M d', strtotime($goat['updated_at'])); ?>
-                        </span>
+                    <?php endif; ?>
+
+                    <div>
+                        <label for="sex">Sex</label>
+                        <select id="sex" name="sex">
+                            <option value="">All</option>
+                            <option value="male"   <?php echo $sexFilter === 'male'   ? 'selected' : ''; ?>>Male</option>
+                            <option value="female" <?php echo $sexFilter === 'female' ? 'selected' : ''; ?>>Female</option>
+                        </select>
                     </div>
 
-                    <div class="goat-card-badges">
-                        <span class="goat-badge" style="background:<?php echo $sexBg; ?>;color:<?php echo $sexColor; ?>;">
-                            <?php echo ucfirst($goat['sex']); ?>
-                        </span>
-                        <span class="goat-badge" style="background:<?php echo $healthBg; ?>;color:<?php echo $healthText; ?>;border:1px solid <?php echo $healthColor; ?>40;">
-                            <span class="health-dot <?php echo $goat['health_status']; ?>"></span>
-                            <?php echo healthStatusLabel($goat['health_status']); ?>
-                        </span>
-                        <span class="goat-badge" style="background:#DCFCE7;color:#166534;border:1px solid #BBF7D0;">
-                            <?php echo goatStatusLabel($goat['status']); ?>
-                        </span>
-                        <?php if ($currentRole !== 'user' && !empty($goat['owner_name'])): ?>
-                            <span class="goat-badge" style="background:#f1f5f9;color:#475569;">
-                                <i class="fas fa-user"></i> <?php echo htmlspecialchars($goat['owner_name']); ?>
-                            </span>
-                        <?php endif; ?>
+                    <div>
+                        <label for="health_status">Health</label>
+                        <select id="health_status" name="health_status">
+                            <option value="">All</option>
+                            <option value="healthy" <?php echo $healthFilter === 'healthy' ? 'selected' : ''; ?>>Healthy</option>
+                            <option value="sick"    <?php echo $healthFilter === 'sick'    ? 'selected' : ''; ?>>Sick</option>
+                            <option value="unknown" <?php echo $healthFilter === 'unknown' ? 'selected' : ''; ?>>Unknown</option>
+                        </select>
                     </div>
 
-                    <div class="goat-actions">
-                        <a href="goat-view.php?id=<?php echo urlencode($goat['id']); ?>" class="btn btn-outline">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                        <?php if ($canEdit): ?>
-                            <a href="goat-update.php?id=<?php echo urlencode($goat['id']); ?>" class="btn btn-primary">
-                                <i class="fas fa-edit"></i> Edit
+                    <div>
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="">All</option>
+                            <option value="active"   <?php echo $statusFilter === 'active'   ? 'selected' : ''; ?>>Active</option>
+                            <option value="sold"     <?php echo $statusFilter === 'sold'     ? 'selected' : ''; ?>>Sold</option>
+                            <option value="deceased" <?php echo $statusFilter === 'deceased' ? 'selected' : ''; ?>>Deceased</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="search" aria-hidden="true"></i>
+                            Filter
+                        </button>
+                        <?php if ($hasActiveFilters): ?>
+                            <a href="<?php echo BASE_URL; ?>/app/goats/dashboard.php" class="btn btn-outline">
+                                <i data-lucide="x" aria-hidden="true"></i>
+                                Clear
                             </a>
                         <?php endif; ?>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
+            </form>
 
+            <!-- ===== GOAT LIST ===== -->
+            <?php if (empty($goats)): ?>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i data-lucide="paw-print" aria-hidden="true"></i>
+                    </div>
+                    <p>No goat records found.</p>
+                    <div class="sub">Try adjusting your filters or add a new goat.</div>
+                    <?php if (in_array($currentRole, ['user', 'admin'], true)): ?>
+                        <a href="<?php echo BASE_URL; ?>/app/goats/goat-create.php" class="btn btn-primary">
+                            <i data-lucide="plus" aria-hidden="true"></i>
+                            Add Your First Goat
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php else: ?>
+                <div class="goat-grid">
+                    <?php foreach ($goats as $goat):
+                        $healthColor = $goat['health_status'] === 'healthy'
+                            ? '#22c55e'
+                            : ($goat['health_status'] === 'sick' ? '#ef4444' : '#94a3b8');
+                        $sexColor = $goat['sex'] === 'male' ? '#3b82f6' : '#ec4899';
+                        $canEdit  = canEditGoat($currentRole, $currentUserId, $goat['user_id']);
+
+                        $photoPath = trim((string)($goat['photo_path'] ?? ''));
+                        $photoUrl  = '';
+
+                        if ($photoPath !== '') {
+                            if (preg_match('#^(https?:)?//#i', $photoPath) || str_starts_with($photoPath, '/')) {
+                                $photoUrl = $photoPath;
+                            } else {
+                                $photoUrl = rtrim(BASE_URL, '/') . '/app/goats/' . ltrim($photoPath, '/');
+                            }
+                        }
+
+                        $updatedTs = strtotime((string)($goat['updated_at'] ?? '')) ?: null;
+                    ?>
+                        <article class="goat-card">
+
+                            <div class="goat-card-photo">
+                                <?php if ($photoUrl !== ''): ?>
+                                    <img src="<?php echo htmlspecialchars($photoUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                         alt="Photo of <?php echo htmlspecialchars($goat['goat_name']); ?>"
+                                         loading="lazy"
+                                         decoding="async"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="no-photo" style="display:none;" aria-hidden="true">
+                                        <i data-lucide="image"></i>
+                                        <span>No photo</span>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="no-photo" aria-hidden="true">
+                                        <i data-lucide="image"></i>
+                                        <span>No photo</span>
+                                    </div>
+                                <?php endif; ?>
+
+                                <span class="health-strip" aria-label="Health status">
+                                    <span class="dot" style="background: <?php echo $healthColor; ?>;"></span>
+                                    <?php echo htmlspecialchars(healthStatusLabel($goat['health_status'])); ?>
+                                </span>
+                            </div>
+
+                            <div class="goat-card-body">
+                                <a href="goat-view.php?id=<?php echo urlencode($goat['id']); ?>" class="goat-card-id">
+                                    <i data-lucide="tag" aria-hidden="true"></i>
+                                    <?php echo htmlspecialchars($goat['goat_id']); ?>
+                                </a>
+
+                                <div class="goat-card-name">
+                                    <?php echo htmlspecialchars($goat['goat_name']); ?>
+                                    <?php if (!empty($goat['tag_number'])): ?>
+                                        <span class="tag-num">(<?php echo htmlspecialchars($goat['tag_number']); ?>)</span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="goat-card-meta">
+                                    <span class="meta-pill">
+                                        <span class="dot" style="background: <?php echo $sexColor; ?>;"></span>
+                                        <?php echo ucfirst(htmlspecialchars($goat['sex'])); ?>
+                                    </span>
+
+                                    <?php if ($currentRole !== 'user' && !empty($goat['owner_name'])): ?>
+                                        <span class="meta-pill owner">
+                                            <i data-lucide="user" aria-hidden="true" style="width:11px;height:11px;"></i>
+                                            <?php echo htmlspecialchars($goat['owner_name']); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="goat-card-actions">
+                                    <a href="goat-view.php?id=<?php echo urlencode($goat['id']); ?>" class="btn btn-outline">
+                                        <i data-lucide="eye" aria-hidden="true"></i>
+                                        View
+                                    </a>
+                                    <?php if ($canEdit): ?>
+                                        <a href="goat-update.php?id=<?php echo urlencode($goat['id']); ?>" class="btn btn-primary">
+                                            <i data-lucide="pencil" aria-hidden="true"></i>
+                                            Edit
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+        </main>
+    </div>
 </div>
 
-<?php renderFooter(); ?>
+<script>
+    lucide.createIcons();
+
+    function toggleSidebar() {
+        document.body.classList.toggle('gf-sidebar-open');
+        var isOpen = document.body.classList.contains('gf-sidebar-open');
+        var toggleBtn = document.querySelector('.gf-navbar-toggle');
+        if (toggleBtn) {
+            toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+    }
+
+    function closeSidebar() {
+        document.body.classList.remove('gf-sidebar-open');
+        var toggleBtn = document.querySelector('.gf-navbar-toggle');
+        if (toggleBtn) {
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSidebar();
+    });
+</script>
+
+<?php renderFooter(); ?>    

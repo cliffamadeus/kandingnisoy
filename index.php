@@ -1,829 +1,322 @@
 <?php
 require_once 'config/config.php';
 require_once 'config/functions.php';
-require_once 'includes/activity-logger.php'; 
 
-// uncomment on deployment
-/*
-require_once $_SERVER['DOCUMENT_ROOT'] . '/test/config/config.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/test/config/functions.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/test/includes/activity-logger.php';
-*/
-
-// Fix: Check if session exists and user is logged in properly
+// Kung naka-login na, i-deretso sila sa ilang dashboard
 if (isLoggedIn()) {
-    // Check if role is set in session before using it
     if (isset($_SESSION['role'])) {
         switch($_SESSION['role']) {
-            case 'admin':
-                redirect('/app/admin/dashboard.php');
-                break;
-            case 'manager':
-                redirect('/app/manager/dashboard.php');
-                break;
-            case 'user':
-                redirect('/app/user/dashboard.php');
-                break;
-            default:
-                redirect('/app/user/dashboard.php');
-                break;
+            case 'admin': redirect('/app/admin/dashboard.php'); break;
+            case 'manager': redirect('/app/manager/dashboard.php'); break;
+            default: redirect('/app/user/dashboard.php'); break;
         }
-    } else {
-        redirect('/app/user/dashboard.php');
     }
 }
-
-$error = '';
-$success = '';
-$rememberMe = false;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $identifier = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $rememberMe = isset($_POST['remember_me']) ? true : false;
-
-    // Allow login using either the email address or the username
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE (email = :identifier OR username = :identifier) AND is_verified = 1");
-    $stmt->execute(['identifier' => $identifier]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user && password_verify($password, $user['password'])) {
-        if ($user['status'] !== 'active') {
-            $error = "⚠️ This account has been deactivated. Please contact an administrator.";
-            logActivity($pdo, $user['id'], $user['email'], 'login', 'failed');
-        } else {
-            // Successful login - set all session variables
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['full_name'] = $user['full_name'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['email'] = $user['email'];
-            $_SESSION['role'] = $user['role'];
-            $_SESSION['user_role'] = $user['role'];
-            $_SESSION['login_time'] = time();
-
-            // Remember me functionality
-            if ($rememberMe) {
-                $token = bin2hex(random_bytes(32));
-                $expiry = date('Y-m-d H:i:s', strtotime('+30 days'));
-                
-                // Store token in database
-                $stmt = $pdo->prepare("UPDATE users SET remember_token = :token, token_expiry = :expiry WHERE id = :id");
-                $stmt->execute([
-                    'token' => $token,
-                    'expiry' => $expiry,
-                    'id' => $user['id']
-                ]);
-                
-                // Set cookie
-                setcookie('remember_token', $token, time() + (86400 * 30), '/', '', false, true);
-            }
-
-            // Log successful login
-            logActivity($pdo, $user['id'], $user['email'], 'login', 'success');
-
-            // Determine redirect path based on role
-            $redirectPath = '';
-            switch($user['role']) {
-                case 'admin':
-                    $redirectPath = '/app/admin/dashboard.php';
-                    break;
-                case 'manager':
-                    $redirectPath = '/app/manager/dashboard.php';
-                    break;
-                case 'user':
-                    $possiblePaths = [
-                        '/app/user/dashboard.php',
-                        '/app/users/dashboard.php',
-                        '/app/dashboard.php'
-                    ];
-                    
-                    $foundPath = false;
-                    foreach ($possiblePaths as $path) {
-                        $fullPath = $_SERVER['DOCUMENT_ROOT'] . $path;
-                        if (file_exists($fullPath)) {
-                            $redirectPath = $path;
-                            $foundPath = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!$foundPath) {
-                        $redirectPath = '/app/user/dashboard.php';
-                    }
-                    break;
-                default:
-                    $redirectPath = '/app/user/dashboard.php';
-                    break;
-            }
-            
-            redirect($redirectPath);
-        }
-    } else {
-        $error = "❌ Invalid credentials or email not verified";
-        logActivity($pdo, null, $identifier, 'login', 'failed');
-    }
-}
-
-renderHeader('Login');
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐐 Goat Management - Login</title>
+    <title>Kandingnisoy - Precision Livestock Farming for Goat Production</title>
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Custom Tailwind Configuration -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        grass: {
-                            50: '#F0FDF4',
-                            100: '#DCFCE7',
-                            200: '#BBF7D0',
-                            300: '#86EFAC',
-                            400: '#4ADE80',
-                            500: '#22C55E',
-                            600: '#16A34A',
-                            700: '#15803D',
-                            800: '#166534',
-                            900: '#14532D',
-                            950: '#0A2E1A'
-                        },
-                        pasture: {
-                            light: '#E8F5E9',
-                            DEFAULT: '#C8E6C9',
-                            dark: '#A5D6A7'
-                        },
-                        slate: {
-                            dark: '#2D3748',
-                            light: '#4A5568',
-                            muted: '#718096'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* Enhanced animations */
-        @keyframes sway {
-            0%, 100% { transform: rotate(-3deg); }
-            50% { transform: rotate(3deg); }
+        :root {
+            --primary: #16a34a;
+            --primary-dark: #14532d;
+            --text: #0f172a;
+            --text-2: #475569;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
         }
         
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-15px) rotate(5deg); }
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 70px; 
         }
         
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
+        body { background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; }
+
+        /* NAVBAR */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; height: 70px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px); z-index: 1000;
+            border-bottom: 1px solid var(--border);
         }
+        .navbar-brand { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 900; color: var(--primary-dark); }
+        .navbar-brand img { width: 40px; height: 40px; border-radius: 8px; }
         
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .nav-links { display: flex; gap: 24px; align-items: center; }
+        .nav-links a { font-weight: 500; color: var(--text-2); transition: color 0.2s; font-size: 15px; }
+        .nav-links a:hover { color: var(--primary); }
+        
+        .btn-login {
+            padding: 8px 20px; border: 2px solid var(--primary); color: var(--primary);
+            border-radius: 8px; font-weight: 700; transition: all 0.2s; font-size: 14px;
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes shimmer {
-            0% { background-position: -200% center; }
-            100% { background-position: 200% center; }
-        }
-        
-        @keyframes glowPulse {
-            0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
-            50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.6); }
-        }
-        
-        .grass-icon {
-            display: inline-block;
-            animation: sway 3s ease-in-out infinite;
-        }
-        
-        .float-animation {
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        .float-animation-delay {
-            animation-delay: 2s;
-        }
-        
-        .pulse-animation {
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        /* Enhanced input styles with more green */
-        .input-focus {
-            transition: all 0.3s ease;
-        }
-        
-        .input-focus:focus {
-            border-color: #22C55E;
-            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
-            outline: none;
-            transform: scale(1.01);
-            background-color: #F0FDF4;
-        }
-        
-        .input-focus:hover {
-            border-color: #4ADE80;
-            background-color: #F7FEF8;
-        }
-        
-        /* Enhanced card styles with more green glow */
-        .login-card {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(34, 197, 94, 0.1);
-            background-color: rgba(255, 255, 255, 0.95) !important; /* Added so text is readable */
-        }
-        
-        .login-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 25px 60px rgba(34, 197, 94, 0.25);
-            border-color: rgba(34, 197, 94, 0.3);
-        }
-        
-        /* Button hover effect - enhanced green */
-        .btn-submit {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            background: linear-gradient(135deg, #22C55E 0%, #15803D 100%);
-            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
-        }
-        
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.5);
-        }
-        
-        .btn-submit::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s ease;
-        }
-        
-        .btn-submit:hover::before {
-            left: 100%;
-        }
-        
-        .btn-submit:active {
-            transform: scale(0.95);
-        }
-        
-        /* Enhanced green background pattern */
-        .bg-pattern {
-            background-image: 
-                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2322C55E' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-        }
-        
-        /* Message container */
-        .message-container {
-            animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        /* Password toggle button */
-        .password-toggle {
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .password-toggle:hover {
-            color: #22C55E;
-        }
-        
-        /* Loading spinner */
-        .spinner {
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top: 2px solid white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            animation: spin 0.8s linear infinite;
+        .btn-login:hover { background: var(--primary); color: #fff; }
+
+        /* BURGER MENU ICON (Hidden by default) */
+        .menu-toggle {
             display: none;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Interactive checkbox - enhanced green */
-        .checkbox-custom {
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #D1D5DB;
-            border-radius: 4px;
-            transition: all 0.3s ease;
+            font-size: 24px;
+            color: var(--primary-dark);
             cursor: pointer;
-            position: relative;
-            flex-shrink: 0;
+            background: none;
+            border: none;
         }
-        
-        .checkbox-custom:checked {
-            background: linear-gradient(135deg, #22C55E, #15803D);
-            border-color: #22C55E;
-            box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
-        }
-        
-        .checkbox-custom:checked::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        
-        .checkbox-custom:hover {
-            border-color: #22C55E;
-            box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
-        }
-        
-        /* Tooltip */
-        .tooltip {
+
+        /* HERO SECTION */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 100px 20px 40px;
+            text-align: center;
+            /* Mas hayag nga gradient aron klaro ang kanding */
+            background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5)), 
+                        url('<?php echo BASE_URL; ?>/assets/images/goat-bg.jpg');
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed;
             position: relative;
         }
-        
-        .tooltip:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-        .tooltip-text {
-            visibility: hidden;
-            opacity: 0;
-            transition: all 0.3s ease;
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1F2937;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            white-space: nowrap;
-            margin-bottom: 5px;
-        }
-        
-        .tooltip-text::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 4px solid transparent;
-            border-top-color: #1F2937;
-        }
-        
-        /* Enhanced link styles with green */
-        .link-green {
-            color: #16A34A;
-            transition: all 0.3s ease;
-        }
-        
-        .link-green:hover {
-            color: #22C55E;
-            text-decoration: underline;
-        }
-        
-        /* Green glow for header */
-        .green-glow {
-            animation: glowPulse 2s ease-in-out infinite;
+
+        /* Walay white background, gibutangan lang og kusog nga text-shadow */
+        .hero-content {
+            max-width: 1000px;
+            z-index: 2;
         }
 
-        /* ===== COMPACT / NO-SCROLL SIZING ===== */
-        html, body {
-            height: 100%;
-            overflow: hidden; /* no page scroll on normal viewports */
+        .hero h1 {
+            font-size: 54px; font-weight: 900; color: #ffffff;
+            margin-bottom: 25px; line-height: 1.2;
+            text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.8); /* Kusog nga shadow para klaro sa hayag */
         }
-
-        .login-viewport {
-            height: 100vh;
-            height: 100dvh; /* accounts for mobile browser chrome */
+        .hero p { 
+            font-size: 20px; color: #f8fafc; margin: 0 auto 40px; max-width: 800px; 
+            text-shadow: 1px 2px 5px rgba(0, 0, 0, 0.9);
+            font-weight: 500;
         }
-
-        /* Safety net: if content genuinely can't fit (very short screens),
-           allow the inner column to scroll instead of clipping content. */
-        .login-scroll-safety {
-            max-height: 100vh;
-            max-height: 100dvh;
-            overflow-y: auto;
-        }
-
-        /* Shrink further on short viewports (landscape phones, small laptops) */
-        @media (max-height: 700px) {
-            .compact-logo { width: 3rem !important; height: 3rem !important; }
-            .compact-logo-wrap { padding: 0.4rem !important; }
-            .compact-title { font-size: 1.1rem !important; }
-            .compact-header { margin-bottom: 0.5rem !important; }
-            .login-card { padding: 0.85rem !important; }
-            .compact-form-gap { gap: 0.5rem !important; }
-            .compact-field-label { margin-bottom: 0.25rem !important; }
-            .compact-hint { display: none !important; }
-            .compact-links { display: none !important; }
-            .compact-footer { margin-top: 0.4rem !important; }
-        }
-
-        @media (max-height: 560px) {
-            .compact-logo-wrap { display: none !important; }
-            .compact-footer { display: none !important; }
-        }
+        /* Highlight ang mga importanteng pulong */
+        .hero p strong { color: #4ade80; font-weight: 700; }
         
-        /* Responsive adjustments */
-        @media (max-width: 640px) {
-            .login-card {
-                padding: 1rem !important;
+        .hero-buttons { display: flex; gap: 16px; justify-content: center; }
+        
+        .btn-primary {
+            padding: 14px 32px; background: var(--primary); color: #fff;
+            border-radius: 10px; font-weight: 700; font-size: 16px;
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.5); transition: all 0.2s;
+        }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-secondary {
+            padding: 14px 32px; background: rgba(255, 255, 255, 0.9); color: var(--primary-dark);
+            border: 2px solid var(--border); border-radius: 10px; font-weight: 700; font-size: 16px;
+            transition: all 0.2s; backdrop-filter: blur(5px);
+        }
+        .btn-secondary:hover { background: #ffffff; transform: translateY(-2px); }
+
+        /* ABOUT SECTION */
+        .about-section {
+            padding: 80px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+        }
+        .about-container { max-width: 900px; margin: 0 auto; }
+        .about-container h2 {
+            font-size: 32px; font-weight: 800; color: var(--primary-dark); margin-bottom: 20px; text-align: center;
+        }
+        .about-text {
+            font-size: 16px; color: var(--text-2); margin-bottom: 20px; line-height: 1.8; text-align: justify;
+        }
+        .highlight-box {
+            background: #f0fdf4;
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 30px 0;
+        }
+        .highlight-box h4 { color: var(--primary-dark); margin-bottom: 10px; font-size: 18px; }
+        .highlight-box p { margin-bottom: 0; font-size: 15px; color: var(--text-2); }
+
+        /* FEATURES SECTION */
+        .features { padding: 80px 20px; max-width: 1200px; margin: 0 auto; background: var(--bg); }
+        .section-title { text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 12px; color: var(--primary-dark); }
+        .section-sub { text-align: center; color: var(--text-2); margin-bottom: 50px; font-size: 16px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+        .card {
+            background: var(--surface); padding: 30px; border-radius: 16px;
+            border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(22, 163, 74, 0.1); }
+        .card-icon {
+            width: 60px; height: 60px; border-radius: 12px; background: #dcfce7;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary); margin-bottom: 20px; font-size: 28px;
+        }
+        .card h3 { font-size: 20px; margin-bottom: 10px; color: var(--text); }
+        .card p { color: var(--text-2); font-size: 15px; }
+
+        /* FOOTER */
+        .footer { background: var(--primary-dark); color: #fff; padding: 40px 20px; text-align: center; }
+        .footer p { opacity: 0.7; font-size: 14px; }
+
+        /* =========================================
+           RESPONSIVE DESIGN (MOBILE) - BURGER MENU
+           ========================================= */
+        @media (max-width: 768px) {
+            .navbar { padding: 0 20px; }
+            
+            /* Itago ang normal nga links */
+            .nav-links {
+                position: absolute;
+                top: 70px;
+                left: 0;
+                right: 0;
+                background: #ffffff;
+                flex-direction: column;
+                padding: 20px;
+                gap: 15px;
+                box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+                border-bottom: 1px solid var(--border);
+                /* Animation para sa dropdown */
+                clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+                transition: clip-path 0.3s ease-in-out;
             }
-        }
-        
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 0.85rem !important;
-            }
-        }
 
-        /* ===== ADDED FOR GOAT BACKGROUND ===== */
-        /* Overlay para mugaan ang background */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4); /* 40% dark overlay */
-            z-index: -1;
+            /* Kung i-click ang burger, mo-appear ang menu */
+            .nav-links.active {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            }
+
+            .nav-links a { font-size: 16px; width: 100%; text-align: center; }
+            .btn-login { width: 100%; text-align: center; display: block; }
+
+            /* Ipakita ang Burger Menu Icon */
+            .menu-toggle { display: block; }
+
+            /* I-adjust ang Hero text para sa mobile */
+            .hero h1 { font-size: 36px; }
+            .hero p { font-size: 16px; }
+            .hero-buttons { flex-direction: column; width: 100%; max-width: 300px; margin: 0 auto; }
         }
     </style>
 </head>
+<body>
 
-<!-- UPDATED BODY TAG WITH GOAT BACKGROUND -->
-<body class="login-viewport flex items-center justify-center p-2 sm:p-3 relative overflow-hidden" style="background-image: url('<?php echo BASE_URL; ?>/assets/images/goat-bg.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
-    
-    <!-- Decorative Elements - Enhanced green -->
-    <div class="fixed inset-0 pointer-events-none overflow-hidden">
-        <!-- Floating elements with more green -->
-        <div class="absolute top-10 left-10 text-5xl opacity-30 grass-icon float-animation hidden lg:block" style="color: #86EFAC;"></div>
-        <div class="absolute bottom-20 left-20 text-4xl opacity-25 grass-icon float-animation float-animation-delay hidden lg:block" style="color: #4ADE80;"></div>
-        <div class="absolute top-1/4 right-10 text-5xl opacity-30 grass-icon float-animation float-animation-delay hidden lg:block" style="color: #86EFAC;"></div>
-        <div class="absolute bottom-1/3 right-20 text-4xl opacity-25 grass-icon float-animation hidden lg:block" style="color: #BBF7D0;"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-9xl opacity-[0.04] hidden lg:block" style="color: #DCFCE7;"></div>
-        
-        <!-- Green gradient overlays -->
-        <div class="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-        <div class="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2"></div>
-    </div>
-    
-    <!-- Login Container -->
-    <div class="w-full max-w-md fade-in relative z-10 login-scroll-safety flex flex-col justify-center">
-        
-        <!-- Header - Compact -->
-        <div class="text-center compact-header mb-3">
-            <div class="inline-block relative compact-logo-wrap">
-                <div class="absolute inset-0 bg-grass-500/30 rounded-full blur-2xl green-glow"></div>
-                <div class="relative bg-gradient-to-br from-white to-green-50 p-2 rounded-2xl shadow-2xl mb-2 pulse-animation border-4 border-green-400/30">
-                    <img src="<?php echo BASE_URL; ?>/assets/images/goat-logo.png"
-                         alt="Precision Livestock Farming"
-                         class="compact-logo w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover"
-                         style="display:block;">
-                </div>
-            </div>
-            <h1 class="compact-title text-xl sm:text-2xl font-bold flex items-center justify-center gap-2 text-white drop-shadow-lg">
-                <span class="grass-icon text-lg sm:text-xl" style="color: #4ADE80;"></span>
-                <span style="color: #FFFFFF;">KANDINGNISOY</span>
-                <span class="grass-icon text-lg sm:text-xl" style="color: #4ADE80;"></span>
-            </h1>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <img src="<?php echo BASE_URL; ?>/assets/images/goat-logo.png" alt="Kandingnisoy Logo" onerror="this.style.display='none'">
+            GOAT PRO
         </div>
         
-        <!-- Login Card - Compact -->
-        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-5 login-card relative overflow-hidden" style="border-color: rgba(34, 197, 94, 0.2);">
-            
-            <!-- Decorative elements - Green themed -->
-            <div class="absolute top-0 right-0 text-8xl opacity-8 transform translate-x-6 -translate-y-6" style="color: #22C55E;">🌿</div>
-            <div class="absolute bottom-0 left-0 text-7xl opacity-8 transform -translate-x-6 translate-y-6" style="color: #4ADE80;">🍃</div>
-            
-            <!-- Green corner accents -->
-            <div class="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-grass-400/20 rounded-tl-2xl"></div>
-            <div class="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-grass-400/20 rounded-tr-2xl"></div>
-            <div class="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-grass-400/20 rounded-bl-2xl"></div>
-            <div class="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-grass-400/20 rounded-br-2xl"></div>
-            
-            <!-- Brand watermark -->
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-8xl opacity-[0.02] font-bold whitespace-nowrap" style="color: #22C55E;">
-                GOAT
-            </div>
-            
-            <!-- Error/Success Messages -->
-            <?php if ($error): ?>
-                <div class="message-container mb-3 bg-red-50 border-l-4 border-red-500 text-red-700 px-3 py-2 rounded-lg flex items-start gap-2 shadow-sm">
-                    <i class="fas fa-exclamation-circle text-red-500 mt-0.5 text-base"></i>
-                    <div class="flex-1">
-                        <p class="font-semibold text-xs">Login Failed</p>
-                        <p class="text-xs"><?php echo htmlspecialchars($error); ?></p>
-                    </div>
-                    <button onclick="this.parentElement.style.display='none'" class="text-red-400 hover:text-red-600 transition-colors">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                </div>
-            <?php endif; ?>
-            
-            <?php if ($success): ?>
-                <div class="message-container mb-3 bg-green-50 border-l-4 border-grass-500 text-green-700 px-3 py-2 rounded-lg flex items-start gap-2 shadow-sm">
-                    <i class="fas fa-check-circle text-grass-500 mt-0.5 text-base"></i>
-                    <div class="flex-1">
-                        <p class="font-semibold text-xs">Success</p>
-                        <p class="text-xs"><?php echo htmlspecialchars($success); ?></p>
-                    </div>
-                    <button onclick="this.parentElement.style.display='none'" class="text-green-400 hover:text-green-600 transition-colors">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                </div>
-            <?php endif; ?>
-            
-            <!-- Login Form -->
-            <form method="POST" class="space-y-3 compact-form-gap" id="loginForm">
-                <!-- Username/Email Field -->
-                <div>
-                    <label for="email" class="compact-field-label block text-sm font-semibold text-slate-dark mb-1">
-                        <i class="fas fa-envelope text-grass-500 mr-1.5"></i>
-                        Username or Email
-                    </label>
-                    <div class="relative group">
-                        <input 
-                            type="text" 
-                            id="email" 
-                            name="email" 
-                            required 
-                            autofocus
-                            placeholder="Enter your username or email"
-                            class="w-full pl-3 pr-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm input-focus transition-all bg-gray-50 hover:bg-white focus:bg-white"
-                            value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
-                            autocomplete="username"
-                        >
-                    </div>
-                    <p class="compact-hint text-xs text-slate-muted mt-1 flex items-center gap-1">
-                        <i class="fas fa-info-circle text-grass-400 text-[10px]"></i>
-                        Use your username or email address to sign in
-                    </p>
-                </div>
-                
-                <!-- Password Field -->
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label for="password" class="compact-field-label block text-sm font-semibold text-slate-dark">
-                            <i class="fas fa-lock text-grass-500 mr-1.5"></i>
-                            Password
-                        </label>
-                    </div>
-                    <div class="relative group">
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            required
-                            placeholder="Enter your password"
-                            class="w-full pl-3 pr-12 py-2.5 border-2 border-gray-200 rounded-lg text-sm input-focus transition-all bg-gray-50 hover:bg-white focus:bg-white"
-                            autocomplete="current-password"
-                        >
-                        <button 
-                            type="button" 
-                            id="togglePassword"
-                            class="absolute inset-y-0 right-0 pr-3 flex items-center password-toggle text-gray-400 hover:text-grass-600 transition-colors"
-                            aria-label="Toggle password visibility"
-                        >
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-
-                </div>
-                
-                <!-- Remember Me & Options -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <label class="flex items-center gap-2 cursor-pointer group">
-                        <input type="checkbox" name="remember_me" id="remember_me" class="checkbox-custom">
-                        <span class="text-xs text-slate-light group-hover:text-slate-dark transition-colors">
-                            Remember me
-                        </span>
-                        <div class="tooltip">
-                            <i class="fas fa-question-circle text-xs text-gray-400 hover:text-grass-500 transition-colors"></i>
-                            <span class="tooltip-text">Stay logged in for 30 days</span>
-                        </div>
-                    </label>
-                    
-                    <div class="flex items-center gap-3 text-xs text-slate-muted">
-                        <span class="flex items-center gap-1">
-                        <a href="#" class="text-xs link-green">
-                            Forgot password?
-                        </a>
-                        </span>
-                    </div>
-                </div>
-                
-                <!-- Submit Button -->
-                <button 
-                    type="submit" 
-                    id="submitBtn"
-                    class="btn-submit w-full text-white font-semibold py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm relative"
-                >
-                    <span id="btnText">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Sign In
-                    </span>
-                    <div class="spinner" id="spinner"></div>
-                </button>
-                
-                <!-- Quick Links -->
-                <div class="compact-links mt-2 pt-2 border-t border-gray-200">
-                    <div class="text-center">
-                        <p class="text-xs text-slate-muted flex items-center justify-center gap-3 flex-wrap">
-                            <i class="fas fa-info-circle text-grass-400"></i>
-                            <span>Need help? <a href="#" class="link-green">Contact support</a></span>
-                            <span class="hidden sm:inline w-px h-3 bg-gray-300"></span>
-                            <a href="#" class="link-green">Privacy Policy</a>
-                            <span class="hidden sm:inline w-px h-3 bg-gray-300"></span>
-                            <a href="#" class="link-green">Terms of Service</a>
-                        </p>
-                    </div>
-                </div>
-            </form>
+        <!-- Normal Links (Desktop) -->
+        <div class="nav-links" id="navLinks">
+            <a href="#home" onclick="toggleMenu()">Home</a>
+            <a href="#about" onclick="toggleMenu()">About</a>
+            <a href="#features" onclick="toggleMenu()">Features</a>
+            <a href="<?php echo BASE_URL; ?>/login.php" class="btn-login">Login</a>
         </div>
+
+        <!-- Burger Icon (Mobile) -->
+        <button class="menu-toggle" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="hero" id="home">
+        <!-- Walay white background, transparent na, text shadow ra ang gigamit -->
+        <div class="hero-content">
+            <h1>Precision Livestock Farming for Goat Production</h1>
+            <p>Gamit ang <strong>Interpolated Weather Data</strong>, among sistema naghatag og automated weather advisories pinaagi sa <strong>SMS</strong> aron malikayan ang epekto sa <strong>Heat Stress</strong> ug mapalambo ang produksyon sa mga kanding sa Manolo Fortich, Bukidnon.</p>
+            <div class="hero-buttons">
+                <a href="<?php echo BASE_URL; ?>/login.php" class="btn-primary">Login</a>
+                <a href="#about" class="btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="about-section">
+        <div class="about-container">
+            <h2>About the System</h2>
+            
+            <p class="about-text">
+                Ang <strong>Goat Production sa Pilipinas</strong> kay dako kaayo og tabang sa food security, labi na sa mga smallholder farms nga nag-buhi og 99.4% sa tanang kanding sa nasod. Apan, tungod sa Climate Change, nagkataas ang temperatura ug nag-usab ang pattern sa ulan. Kini nga mga kausaban nagdala og <strong>Heat Stress</strong> sa mga kanding, nga makapahinay sa ilang pagtubo, makapakunhod sa gatas, ug makapaluya sa ilang immune system.
+            </p>
+
+            <p class="about-text">
+                Apan, daghan sa mga mag-uuma sa Manolo Fortich, Bukidnon ang nag-rely lang sa tradisyonal nga pamaagi sa pag-tugway ug walay access sa mga mahalon nga weather sensors o teknolohiya. Mao kini ang problema nga among gitubag pinaagi sa <strong>GoatPro (Precision Livestock Farming System)</strong>.
+            </p>
+
+            <div class="highlight-box">
+                <h4>Unsaon niya pag-obra?</h4>
+                <p>Imbes nga mogamit og physical sensors sa uma, among sistema mag-gamit sa <strong>Interpolated Weather Data</strong> mag-estimate sa lokal nga panahon base sa datos gikan sa mga kasikbit nga weather stations. Kini i-convert ngadto sa <strong>Temperature-Humidity Index (THI)</strong> aron mahibaw-an kung naay heat stress risk. Kung naay kakuyaw (sama sa kusog nga ulan o grabeng kainit), <strong>automatic nga magpadala og SMS Advisory</strong> ang sistema ngadto sa cellphone sa mag-uuma aron makahimo sila dayon og aksyon sama sa pagpasulod sa kanding sa kural.</p>
+            </div>
+
+            <p class="about-text" style="text-align: center; font-weight: bold; margin-top: 30px; color: var(--primary);">
+                A Capstone Project by Giovanny Barsbia, Diether J A. Labis, & Silverio M. Laspoña Jr.<br>
+                <span style="font-size: 14px; font-weight: normal; color: var(--text-2);">Northern Bukidnon State College</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- FEATURES SECTION  LOCALHOST-->
+    <section id="features" class="features">
+        <h2 class="section-title">Features sa GOAT PRO</h2>
+        <p class="section-sub">Ang mga teknolohiya nga nagsuporta sa atong mga mag-uuma.</p>
         
-        
-    <!-- JavaScript for interactive features -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Password toggle visibility
-            const togglePassword = document.getElementById('togglePassword');
-            const passwordInput = document.getElementById('password');
-            
-            if (togglePassword && passwordInput) {
-                togglePassword.addEventListener('click', function() {
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    this.querySelector('i').classList.toggle('fa-eye');
-                    this.querySelector('i').classList.toggle('fa-eye-slash');
-                });
-            }
-            
-            // Form submission with loading state
-            const loginForm = document.getElementById('loginForm');
-            const submitBtn = document.getElementById('submitBtn');
-            const btnText = document.getElementById('btnText');
-            const spinner = document.getElementById('spinner');
-            
-            if (loginForm) {
-                loginForm.addEventListener('submit', function(e) {
-                    // Show loading state
-                    btnText.textContent = 'Signing in...';
-                    spinner.style.display = 'inline-block';
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.8';
-                    
-                    // Re-enable after 10 seconds (safety)
-                    setTimeout(function() {
-                        btnText.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-                        spinner.style.display = 'none';
-                        submitBtn.disabled = false;
-                        submitBtn.style.opacity = '1';
-                    }, 10000);
-                });
-            }
-            
-            // Input field animations
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    this.parentElement.classList.add('ring-2', 'ring-grass-400/30', 'rounded-lg');
-                });
+        <div class="grid">
+            <!-- Feature 1 -->
+            <div class="card">
                 
-                input.addEventListener('blur', function() {
-                    this.parentElement.classList.remove('ring-2', 'ring-grass-400/30', 'rounded-lg');
-                });
-            });
-            
-            // Auto-dismiss error messages after 8 seconds
-            const errorMessages = document.querySelectorAll('.message-container');
-            errorMessages.forEach(msg => {
-                setTimeout(() => {
-                    msg.style.opacity = '0';
-                    msg.style.transform = 'translateY(-10px)';
-                    msg.style.transition = 'all 0.5s ease';
-                    setTimeout(() => {
-                        msg.style.display = 'none';
-                    }, 500);
-                }, 8000);
-            });
-            
-            // Remember me checkbox enhancement
-            const rememberCheckbox = document.getElementById('remember_me');
-            if (rememberCheckbox) {
-                rememberCheckbox.addEventListener('change', function() {
-                    const label = this.nextElementSibling;
-                    if (this.checked) {
-                        label.innerHTML = 'Remember me <span class="text-grass-500">✓</span>';
-                    } else {
-                        label.innerHTML = 'Remember me';
-                    }
-                });
-            }
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                // Ctrl + Shift + L to focus on login
-                if (e.ctrlKey && e.shiftKey && e.key === 'L') {
-                    e.preventDefault();
-                    const emailInput = document.getElementById('email');
-                    if (emailInput) {
-                        emailInput.focus();
-                        emailInput.select();
-                    }
-                }
-            });
-            
-            // Click on card to focus email (user-friendly)
-            const loginCard = document.querySelector('.login-card');
-            if (loginCard) {
-                loginCard.addEventListener('click', function(e) {
-                    if (e.target === this || this.contains(e.target) && !e.target.closest('input') && !e.target.closest('button')) {
-                        const emailInput = document.getElementById('email');
-                        if (emailInput && document.activeElement !== emailInput) {
-                            emailInput.focus();
-                        }
-                    }
-                });
-            }
-        });
-        
-        // Smooth scroll behavior
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-    </script>
-    
-    <!-- Mobile detection -->
+                <h3>Interpolated Weather Forecast</h3>
+                <p>Wala nay kinahanglan og mahalon nga weather sensor. Among sistema mag-estimate sa lokal nga panahon base sa datos sa mga kasikbit nga weather stations, ug i-convert kini ngadto sa Heat Stress Index (THI) para sa kanding.</p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="card">
+                
+                <h3>Automated SMS Advisories</h3>
+                <p>Pag-abot sa kakuyaw (sama sa kusog nga ulan o sobrang init), automatic nga magpadala og SMS ang sistema ngadto sa mga farmer nga naka-register, aron makahimo sila og dayon nga aksyon sama sa pagpasulod sa kanding sa kural.</p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="card">
+                
+                <h3>Goat Inventory & Reports</h3>
+                <p>I-track ang mga kanding pinaagi sa Goat ID. Makita usab sa Municipal Agriculture Office (MAO) ang mga report sa mga mag-uuma pinaagi sa pag-export niini ngadto sa PDF.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <h2 style="margin-bottom: 10px;">Kandingnisoy System</h2>
+        <p>&copy; <?php echo date('Y'); ?> GoatPro - Precision Livestock Farming for Goat Production. All rights reserved.</p>
+        <p style="margin-top: 8px;">Northern Bukidnon State College 🐐</p>
+    </footer>
+
+    <!-- SCRIPT PARA SA BURGER MENU -->
     <script>
-        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-            document.body.classList.add('touch-device');
-            const style = document.createElement('style');
-            style.textContent = `
-                input, button, a, label {
-                    min-height: 40px;
-                }
-                .checkbox-custom {
-                    width: 20px;
-                    height: 20px;
-                }
-            `;
-            document.head.appendChild(style);
+        function toggleMenu() {
+            var nav = document.getElementById("navLinks");
+            nav.classList.toggle("active");
         }
     </script>
 </body>
 </html>
-
-<?php renderFooter(); ?>

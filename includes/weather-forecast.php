@@ -5,24 +5,19 @@
  * Uses OpenWeatherMap's free "5 Day / 3 Hour Forecast" API.
  * Location is FIXED for the whole system: Manolo Fortich, Bukidnon.
  *
- * ⚠️ SETUP REQUIRED: create a `.env` file in your project root (next to
- * this file, or wherever you keep config) with a line like:
- *   OPENWEATHER_API_KEY=your_real_key_here
- * A `.env.example` template is included — copy it to `.env` and fill it in.
- * Get a free key at https://openweathermap.org/api. New keys take
- * 10 min - 2 hours to activate.
+ * ⚠️ SETUP REQUIRED: paste your API key below before this will work.
+ * Get a free key at https://openweathermap.org/api (see setup steps
+ * shared in chat). New keys take 10 min - 2 hours to activate.
  *
  * Include this file, then call:
  *   $weather = getFarmWeatherForecast();
  *   $tips    = getGoatFarmingTips($weather);
  */
 
-// Load variables from .env into getenv()/$_ENV (safe no-op if missing)
-require_once __DIR__ . '/env-loader.php';
-loadEnv(__DIR__ . '/../.env');
-
-// ---- API key now comes from .env, NOT hardcoded here ----
+// ---- PASTE YOUR OPENWEATHERMAP API KEY HERE ----
 if (!defined('OPENWEATHER_API_KEY')) {
+    require_once __DIR__ . '/env-loader.php';
+    loadEnv(__DIR__ . '/../.env');
     define('OPENWEATHER_API_KEY', getenv('OPENWEATHER_API_KEY') ?: '');
 }
 

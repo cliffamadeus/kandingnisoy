@@ -1,0 +1,136 @@
+[2026-10-21 14:25:09] --- CRON STARTED ---
+[2026-10-21 14:25:09] Weather Data: Temp=27°C, RainToday=4.9mm, RainTonight=1mm
+[2026-10-21 14:25:09] Advisory Detected: [medium] HEAT ADVISORY: Mild heat stress. Monitor goats and increase ventilation.
+[2026-10-21 14:25:09] Sending advisory to farmers...
+[2026-10-21 14:25:12] SUCCESS: Sent to 6 of 6 farmers.
+[2026-10-21 20:57:43] --- CRON STARTED ---
+[2026-10-21 20:57:43] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 20:57:43] No advisory triggered. Weather is normal.
+[2026-10-21 21:00:02] --- CRON STARTED ---
+[2026-10-21 21:00:02] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:00:02] No advisory triggered. Weather is normal.
+[2026-10-21 21:00:40] --- CRON STARTED ---
+[2026-10-21 21:00:40] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:00:40] No advisory triggered. Weather is normal.
+[2026-10-21 21:05:02] --- CRON STARTED ---
+[2026-10-21 21:05:02] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:05:02] No advisory triggered. Weather is normal.
+[2026-10-21 21:10:02] --- CRON STARTED ---
+[2026-10-21 21:10:02] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:10:02] No advisory triggered. Weather is normal.
+[2026-10-21 21:14:28] --- CRON STARTED ---
+[2026-10-21 21:14:28] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:14:28] No advisory triggered. Weather is normal.
+[2026-10-21 21:14:47] --- CRON STARTED ---
+[2026-10-21 21:14:47] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:14:47] No advisory triggered. Weather is normal.
+[2026-10-21 21:15:01] --- CRON STARTED ---
+[2026-10-21 21:15:01] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:15:01] No advisory triggered. Weather is normal.
+[2026-10-21 21:20:01] --- CRON STARTED ---
+[2026-10-21 21:20:02] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:20:02] No advisory triggered. Weather is normal.
+[2026-10-21 21:25:01] --- CRON STARTED ---
+[2026-10-21 21:25:02] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:25:02] No advisory triggered. Weather is normal.
+[2026-10-21 21:32:01] --- CRON STARTED ---
+[2026-10-21 21:32:01] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:32:01] No advisory triggered. Weather is normal.
+[2026-10-21 21:32:14] --- CRON STARTED ---
+[2026-10-21 21:32:14] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:32:14] No advisory triggered. Weather is normal.
+[2026-10-21 21:32:22] --- CRON STARTED ---
+[2026-10-21 21:32:22] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:32:22] No advisory triggered. Weather is normal.
+[2026-10-21 21:45:06] --- CRON STARTED ---
+[2026-10-21 21:45:07] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:45:07] No advisory triggered. Weather is normal.
+[2026-10-21 21:46:20] --- CRON STARTED ---
+[2026-10-21 21:46:20] --- CRON STARTED ---
+[2026-10-21 21:46:20] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:46:20] No advisory triggered. Weather is normal.
+[2026-10-21 21:46:20] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:46:20] No advisory triggered. Weather is normal.
+[2026-10-21 21:46:24] --- CRON STARTED ---
+[2026-10-21 21:46:25] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:46:25] No advisory triggered. Weather is normal.
+[2026-10-21 21:46:31] --- CRON STARTED ---
+[2026-10-21 21:46:32] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 21:46:32] No advisory triggered. Weather is normal.
+[2026-10-21 09:50 PM] --- CRON STARTED ---
+[2026-10-21 09:50 PM] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 09:50 PM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-21 09:50 PM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang yuta.
+[2026-10-21 09:50 PM] SKIPPED: Medium rain advisory sent in the last 3 hours.
+[2026-10-21 09:50 PM] --- CRON STARTED ---
+[2026-10-21 09:50 PM] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 09:50 PM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-21 09:50 PM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang yuta.
+[2026-10-21 09:50 PM] SKIPPED: Medium rain advisory sent in the last 3 hours.
+[2026-10-21 09:50 PM] --- CRON STARTED ---
+[2026-10-21 09:50 PM] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 09:50 PM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-21 09:50 PM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang yuta.
+[2026-10-21 09:50 PM] SKIPPED: Medium rain advisory sent in the last 3 hours.
+[2026-10-21 09:51 PM] --- CRON STARTED ---
+[2026-10-21 09:51 PM] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 09:51 PM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-21 09:51 PM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang yuta.
+[2026-10-21 09:51 PM] SKIPPED: Medium rain advisory sent in the last 3 hours.
+[2026-10-21 09:53 PM] --- CRON STARTED ---
+[2026-10-21 09:53 PM] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 09:53 PM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-21 09:53 PM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang yuta.
+[2026-10-21 09:53 PM] SKIPPED: Medium rain advisory sent in the last 3 hours.
+[2026-10-21 09:53 PM] --- CRON STARTED ---
+[2026-10-21 09:53 PM] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 09:53 PM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-21 09:53 PM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang yuta.
+[2026-10-21 09:53 PM] SKIPPED: Medium rain advisory sent in the last 3 hours.
+[2026-10-21 09:54 PM] --- CRON STARTED ---
+[2026-10-21 09:54 PM] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 09:54 PM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-21 09:54 PM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang yuta.
+[2026-10-21 09:54 PM] Sending advisory to farmers...
+[2026-10-21 09:55 PM] SUCCESS: Sent to 6 of 6 farmers.
+[2026-10-21 09:58 PM] --- CRON STARTED ---
+[2026-10-21 09:58 PM] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 09:58 PM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-21 09:58 PM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang yuta.
+[2026-10-21 09:58 PM] SKIPPED: Duplicate message sent in the last 15 minutes.
+[2026-10-21 10:03 PM] --- CRON STARTED ---
+[2026-10-21 10:03 PM] Weather Data: Temp=22°C, RainToday=0mm, RainTonight=0mm
+[2026-10-21 10:03 PM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-21 10:03 PM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang yuta.
+[2026-10-21 10:03 PM] SKIPPED: Duplicate message sent in the last 15 minutes.
+[2026-10-26 10:22 AM] --- CRON STARTED ---
+[2026-10-26 10:22 AM] Weather Data: Temp=29°C, RainToday=5.1mm, RainTonight=0.6mm
+[2026-10-26 10:22 AM] Forecast Check: Max Pop = 100%, High Pop Count = 16
+[2026-10-26 10:22 AM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang sagbot.
+[2026-10-26 10:22 AM] Sending advisory to farmers...
+[2026-10-26 10:22 AM] SUCCESS: Sent to 6 of 6 farmers.
+[2026-10-26 10:23 AM] --- CRON STARTED ---
+[2026-10-26 10:23 AM] Weather Data: Temp=29°C, RainToday=5.1mm, RainTonight=0.6mm
+[2026-10-26 10:23 AM] Forecast Check: Max Pop = 100%, High Pop Count = 16
+[2026-10-26 10:23 AM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang sagbot.
+[2026-10-26 10:23 AM] SKIPPED: Duplicate message sent in the last 15 minutes.
+[2026-10-26 10:38 AM] --- CRON STARTED ---
+[2026-10-26 10:38 AM] Weather Data: Temp=30°C, RainToday=5.1mm, RainTonight=0.6mm
+[2026-10-26 10:38 AM] Forecast Check: Max Pop = 100%, High Pop Count = 16
+[2026-10-26 10:38 AM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang sagbot.
+[2026-10-26 10:38 AM] SKIPPED: Medium rain advisory sent in the last 3 hours.
+[2026-10-26 10:39 AM] --- CRON STARTED ---
+[2026-10-26 10:39 AM] Weather Data: Temp=30°C, RainToday=5.1mm, RainTonight=0.6mm
+[2026-10-26 10:39 AM] Forecast Check: Max Pop = 100%, High Pop Count = 16
+[2026-10-26 10:39 AM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang sagbot.
+[2026-10-26 10:39 AM] SKIPPED: Medium rain advisory sent in the last 3 hours.
+[2026-10-26 11:19 AM] --- CRON STARTED ---
+[2026-10-26 11:19 AM] Weather Data: Temp=30°C, RainToday=4.9mm, RainTonight=0.6mm
+[2026-10-26 11:19 AM] Forecast Check: Max Pop = 100%, High Pop Count = 17
+[2026-10-26 11:19 AM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang sagbot.
+[2026-10-26 11:19 AM] SKIPPED: Medium rain advisory sent in the last 3 hours.
+[2026-10-28 10:14 AM] --- CRON STARTED ---
+[2026-10-28 10:14 AM] Weather Data: Temp=29°C, RainToday=10.8mm, RainTonight=1.2mm
+[2026-10-28 10:14 AM] Forecast Check: Max Pop = 100%, High Pop Count = 22
+[2026-10-28 10:14 AM] Advisory Detected: [medium] Pahibalo: Base sa forecast, dako ang tsansa nga mo-ulan ugma sa buntag. Palihog siguroha nga naa sa silong o kural ang mga kanding inig ka-buntag ug naay dry nga pagkaon (kumpay) nga ready, kay posible nga dili sila pwede itugway kung basa ang sagbot.
+[2026-10-28 10:14 AM] Sending advisory to farmers...

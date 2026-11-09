@@ -2,6 +2,9 @@
 require_once '../config/config.php';
 require_once '../config/functions.php';
 
+// ADMIN ONLY (test page - do not deploy to production)
+requireRole('admin');
+
 // Get all users
 $stmt = $pdo->prepare("SELECT id, full_name, username, email, role, status, is_verified FROM users ORDER BY 
     CASE role 

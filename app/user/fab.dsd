@@ -1,0 +1,11 @@
+<!-- FAB -->
+<div class="gf-fab-wrap" id="gfFabWrap">
+    <div class="gf-fab-inner">
+        <button type="button" class="gf-fab-toggle" aria-label="Open quick menu"
+                aria-expanded="false" aria-controls="gfFabMenu" id="gfFabToggle">
+            <span class="gf-fab-icon-wrap" aria-hidden="true">
+                <?php if (file_exists(__DIR__ . '/../../assets/img/goat-icon.png')): ?>
+                    <img src="<?php echo BASE_URL; ?>/assets/img/goat-icon.png" alt="" loading="eager" decoding="async">
+                <?php else: ?>
+                    <span style="font-size:28px;">🐐</span>
+                <?php endif; ?>
