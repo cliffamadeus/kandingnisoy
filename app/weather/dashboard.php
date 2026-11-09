@@ -1327,7 +1327,7 @@ renderHeader($title);
                     </div>
 
                     <!-- ============================================
-                         MODEL BOUNDS ANALYSIS (NEW)
+                         MODEL BOUNDS ANALYSIS (WITH VISUALIZATION)
                     ============================================ -->
                     <div class="card">
                         <div class="guide-head">
@@ -1346,6 +1346,7 @@ renderHeader($title);
                             <?php
                             $b = $boundsData['bounds'];
                             $src = $boundsData['sources'];
+                            $chartData = $boundsData['chart_data'] ?? null;
                             ?>
                             <div class="metric-strip" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 14px;">
                                 <?php
@@ -1377,6 +1378,18 @@ renderHeader($title);
                                     </div>
                                 <?php endforeach; ?>
                             </div>
+
+                            <!-- NEW: Chart.js Visualization -->
+                            <?php if ($chartData && !empty($chartData['time'])): ?>
+                            <div style="margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border-2);">
+                                <div style="font-size: 11px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+                                    Temperature Envelope (Next 24h)
+                                </div>
+                                <div style="position: relative; height: 160px; width: 100%;">
+                                    <canvas id="boundsChart"></canvas>
+                                </div>
+                            </div>
+                            <?php endif; ?>
 
                             <!-- Per-source detail table -->
                             <div style="overflow-x: auto;">
@@ -1472,6 +1485,9 @@ renderHeader($title);
         </main>
     </div>
 </div>
+
+<!-- Chart.js for the Bounds Visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
 // ============================================================
@@ -1592,6 +1608,103 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
         selectHour(0, false);
     }
 })();
+
+// ============================================================
+// BOUNDS CHART (Chart.js)
+// ============================================================
+<?php if ($boundsData && !empty($boundsData['chart_data'])): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = <?php echo json_encode($boundsData['chart_data']); ?>;
+    const ctx = document.getElementById('boundsChart');
+    if (!ctx) return;
+
+    // Format time labels (e.g., "14:00")
+    const labels = chartData.time.map(t => {
+        const d = new Date(t);
+        return d.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+    });
+
+    new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Upper Bound',
+                    data: chartData.temp_max,
+                    borderColor: 'transparent',
+                    backgroundColor: 'rgba(37, 99, 235, 0.15)', // Light blue fill
+                    pointRadius: 0,
+                    fill: '+1' // Fills down to the next dataset
+                },
+                {
+                    label: 'Lower Bound',
+                    data: chartData.temp_min,
+                    borderColor: 'transparent',
+                    backgroundColor: 'transparent',
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'Interpolated Mean',
+                    data: chartData.temp_mean,
+                    borderColor: '#2563eb', // Solid blue line
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    fill: false,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false }, // Hide legend to save space
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { size: 11, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    padding: 10,
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 2) {
+                                const min = chartData.temp_min[context.dataIndex];
+                                const max = chartData.temp_max[context.dataIndex];
+                                return `Mean: ${context.parsed.y}°C (Bounds: ${min}° – ${max}°)`;
+                            }
+                            return null; // Hide individual bounds in tooltip
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 10 },
+                        color: '#94a3b8',
+                        maxTicksLimit: 6 // Prevents overcrowding on mobile
+                    }
+                },
+                y: {
+                    grid: { color: '#f1f5f9' },
+                    ticks: {
+                        font: { size: 10 },
+                        color: '#94a3b8',
+                        callback: function(value) { return value + '°C'; }
+                    }
+                }
+            }
+        }
+    });
+});
+<?php endif; ?>
 </script>
 
 <?php renderFooter(); ?>
