@@ -176,6 +176,9 @@ if (!function_exists('icon')) {
 // ============================================================
 if (isset($_GET['refresh']) && $_GET['refresh'] === '1') {
     unset($_SESSION['_wx_cache']);
+    foreach (array_keys($_SESSION) as $k) {
+        if (strpos($k, '_wf_bounds') === 0) unset($_SESSION[$k]);
+    }
     header('Location: ' . $_SERVER['PHP_SELF']);
     exit;
 }
@@ -233,7 +236,7 @@ $rainTonight = round($rainTonight, 1);
 // SUNRISE TIGWAY ADVISORY (Past 12 Hours Rain)
 // ============================================================
 $past12hRain = 0;
-$currentHour = (int)date('G'); 
+$currentHour = (int)date('G');
 
 if ($forecastRaw && !empty($forecastRaw['list'])) {
     $now = time();
@@ -246,6 +249,33 @@ if ($forecastRaw && !empty($forecastRaw['list'])) {
 $past12hRain = round($past12hRain, 1);
 $isMorning = ($currentHour >= 6 && $currentHour <= 9);
 $morningTigwayAdvisory = ($isMorning && $past12hRain > 1);
+
+// ============================================================
+// MULTI-SOURCE BOUNDS (Direct Include Method)
+// ============================================================
+$boundsData = null;
+$boundsError = null;
+
+$boundsCacheKey = '_wf_bounds_page_' . date('YmdH');
+if (isset($_SESSION[$boundsCacheKey]) && (time() - $_SESSION[$boundsCacheKey]['t']) < 1800) {
+    $boundsData = $_SESSION[$boundsCacheKey]['v'];
+} else {
+    $proxyPath = __DIR__ . '/weather-bounds-proxy.php';
+    
+    if (file_exists($proxyPath)) {
+        // Include directly. The proxy returns an array.
+        $decoded = require $proxyPath;
+        
+        if (is_array($decoded) && isset($decoded['bounds'])) {
+            $boundsData = $decoded;
+            $_SESSION[$boundsCacheKey] = ['t' => time(), 'v' => $decoded];
+        } else {
+            $boundsError = 'Proxy executed but returned invalid data. Check API keys or permissions.';
+        }
+    } else {
+        $boundsError = 'Proxy file not found at: ' . $proxyPath;
+    }
+}
 
 // ============================================================
 // SMS ADVISORY DETECTION (BISAYA VERSION & ACCURATE)
@@ -274,7 +304,7 @@ if ($rainTonight > 5 || $rainToday > 15) {
         'title'    => 'Pahibalo: Kusog nga Ulan',
         'message'  => "URGENTE: Kusog nga ulan ({$rainTonight}mm) ang gi-expect karong gabhiona. Palihog pasulod sa kural o silong ang mga kanding aron dili mabasa ug matugnawan. Ayaw pagpanggawas hangtod mohunong ang ulan ug moinit ang panahon ugma.",
     ];
-} 
+}
 // 2. Light Rain or High Probability (Medium Priority)
 elseif ($rainTonight > 2 || $hasHighPop) {
     $advisories[] = [
@@ -293,7 +323,7 @@ if ($heat['level'] === 'high') {
         'title'    => 'Pahibalo: Sobrang Init',
         'message'  => "Pahibalo: Grabe ang kainit karon (THI: " . round($thi) . "). Siguroha nga naay dakong landong ang kanding ug kanunay naay limpyo nga tubig nga mainom aron malikayan ang heat stress.",
     ];
-} 
+}
 // 4. Mild Heat (Medium Priority)
 elseif ($heat['level'] === 'mid' && $temp >= 30) {
     $advisories[] = [
@@ -1296,6 +1326,122 @@ renderHeader($title);
 
                     </div>
 
+                    <!-- ============================================
+                         MODEL BOUNDS ANALYSIS (WITH VISUALIZATION)
+                    ============================================ -->
+                    <div class="card">
+                        <div class="guide-head">
+                            <div class="guide-title">Model Bounds Analysis</div>
+                            <span class="guide-badge green" id="boundsSourcesBadge">
+                                <?php if ($boundsData): ?>
+                                    <?php echo (int)$boundsData['active']; ?>/<?php echo (int)$boundsData['total']; ?> sources
+                                <?php else: ?>
+                                    unavailable
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <p class="guide-sub">Interpolated mean with min/max envelope across models</p>
+
+                        <?php if ($boundsData && !empty($boundsData['bounds'])): ?>
+                            <?php
+                            $b = $boundsData['bounds'];
+                            $src = $boundsData['sources'];
+                            $chartData = $boundsData['chart_data'] ?? null;
+                            ?>
+                            <div class="metric-strip" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 14px;">
+                                <?php
+                                $rows = [
+                                    ['Temperature', $b['temp'],     '°C',    1],
+                                    ['Humidity',    $b['humidity'], '%',     0],
+                                    ['Wind',        $b['wind'],     ' km/h', 1],
+                                    ['Rain (1h)',   $b['rain'],     ' mm',   1],
+                                ];
+                                foreach ($rows as $r):
+                                    [$label, $stat, $unit, $dp] = $r;
+                                    $has = $stat && $stat['value'] !== null;
+                                ?>
+                                    <div class="metric-cell">
+                                        <div class="metric-label"><?php echo $label; ?></div>
+                                        <div class="metric-value">
+                                            <?php echo $has ? number_format($stat['value'], $dp) : '—'; ?>
+                                            <span class="unit"><?php echo $unit; ?></span>
+                                        </div>
+                                        <div class="metric-note">
+                                            <?php if ($has): ?>
+                                                Bounds <?php echo number_format($stat['min'], $dp); ?>
+                                                – <?php echo number_format($stat['max'], $dp); ?>
+                                                · spread <?php echo number_format($stat['spread'], $dp); ?>
+                                            <?php else: ?>
+                                                No data
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <!-- NEW: Chart.js Visualization -->
+                            <?php if ($chartData && !empty($chartData['time'])): ?>
+                            <div style="margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border-2);">
+                                <div style="font-size: 11px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+                                    Temperature Envelope (Next 24h)
+                                </div>
+                                <div style="position: relative; height: 160px; width: 100%;">
+                                    <canvas id="boundsChart"></canvas>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Per-source detail table -->
+                            <div style="overflow-x: auto;">
+                                <table style="width:100%; border-collapse: collapse; font-size: 11.5px;">
+                                    <thead>
+                                        <tr style="background:#fafbfc; color:#94a3b8; text-transform: uppercase; letter-spacing:0.05em; font-size:10px;">
+                                            <th style="text-align:left; padding:8px 10px; border-bottom:1px solid #eef2f6;">Source</th>
+                                            <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eef2f6;">Temp</th>
+                                            <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eef2f6;">Humid</th>
+                                            <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eef2f6;">Wind</th>
+                                            <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eef2f6;">Rain</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($src as $name => $s): ?>
+                                            <tr>
+                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; color:#0f172a; font-weight:700;">
+                                                    <?php echo htmlspecialchars(str_replace('_', ' ', $name)); ?>
+                                                    <?php if (empty($s['available'])): ?>
+                                                        <span style="display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; background:#fee2e2; color:#b91c1c; font-size:9.5px; font-weight:800;">OFFLINE</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; text-align:right; color:#475569;">
+                                                    <?php echo $s['temp'] !== null ? number_format($s['temp'], 1) . '°C' : '—'; ?>
+                                                </td>
+                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; text-align:right; color:#475569;">
+                                                    <?php echo $s['humidity'] !== null ? number_format($s['humidity'], 0) . '%' : '—'; ?>
+                                                </td>
+                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; text-align:right; color:#475569;">
+                                                    <?php echo $s['wind'] !== null ? number_format($s['wind'], 1) : '—'; ?>
+                                                </td>
+                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; text-align:right; color:#475569;">
+                                                    <?php echo $s['rain'] !== null ? number_format($s['rain'], 1) : '—'; ?>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div style="margin-top:10px; padding:10px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-size:11px; color:#166534; line-height:1.5;">
+                                <strong>Interpolation:</strong> mean of available sources.
+                                <strong>Bounds:</strong> min/max across sources.
+                                A narrow spread means models agree; a wide spread means uncertainty is high.
+                            </div>
+                        <?php else: ?>
+                            <div style="padding:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; font-size:12px; color:#b91c1c;">
+                                <?php echo htmlspecialchars($boundsError ?: 'Bounds data unavailable'); ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
                     <!-- 5-DAY FORECAST -->
                     <div class="card" id="forecast">
                         <div class="guide-head">
@@ -1339,6 +1485,9 @@ renderHeader($title);
         </main>
     </div>
 </div>
+
+<!-- Chart.js for the Bounds Visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
 // ============================================================
@@ -1451,7 +1600,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
 
     document.querySelectorAll('.chart-bar').forEach(function(bar) {
         bar.addEventListener('click', function() {
-            selectHour(parseInt(this.dataset.index), true);
+            selectHour(parseInt(bar.dataset.index), true);
         });
     });
 
@@ -1459,6 +1608,103 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
         selectHour(0, false);
     }
 })();
+
+// ============================================================
+// BOUNDS CHART (Chart.js)
+// ============================================================
+<?php if ($boundsData && !empty($boundsData['chart_data'])): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = <?php echo json_encode($boundsData['chart_data']); ?>;
+    const ctx = document.getElementById('boundsChart');
+    if (!ctx) return;
+
+    // Format time labels (e.g., "14:00")
+    const labels = chartData.time.map(t => {
+        const d = new Date(t);
+        return d.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+    });
+
+    new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Upper Bound',
+                    data: chartData.temp_max,
+                    borderColor: 'transparent',
+                    backgroundColor: 'rgba(37, 99, 235, 0.15)', // Light blue fill
+                    pointRadius: 0,
+                    fill: '+1' // Fills down to the next dataset
+                },
+                {
+                    label: 'Lower Bound',
+                    data: chartData.temp_min,
+                    borderColor: 'transparent',
+                    backgroundColor: 'transparent',
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'Interpolated Mean',
+                    data: chartData.temp_mean,
+                    borderColor: '#2563eb', // Solid blue line
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    fill: false,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false }, // Hide legend to save space
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { size: 11, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    padding: 10,
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 2) {
+                                const min = chartData.temp_min[context.dataIndex];
+                                const max = chartData.temp_max[context.dataIndex];
+                                return `Mean: ${context.parsed.y}°C (Bounds: ${min}° – ${max}°)`;
+                            }
+                            return null; // Hide individual bounds in tooltip
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 10 },
+                        color: '#94a3b8',
+                        maxTicksLimit: 6 // Prevents overcrowding on mobile
+                    }
+                },
+                y: {
+                    grid: { color: '#f1f5f9' },
+                    ticks: {
+                        font: { size: 10 },
+                        color: '#94a3b8',
+                        callback: function(value) { return value + '°C'; }
+                    }
+                }
+            }
+        }
+    });
+});
+<?php endif; ?>
 </script>
 
 <?php renderFooter(); ?>
