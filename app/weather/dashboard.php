@@ -276,38 +276,47 @@ renderHeader($title);
 ?>
 
 <style>
+    /* MATERIAL DESIGN TOKENS */
     :root {
-        --bg: #f5f7fa; --surface: #ffffff;
-        --text: #0f172a; --text-2: #475569; --text-3: #94a3b8;
-        --border: #e5e9ef; --border-2: #f1f5f9;
-        --primary: #2563eb; --primary-light: #dbeafe; --primary-dark: #1d4ed8;
-        --green: #16a34a; --green-light: #dcfce7;
-        --amber: #d97706; --amber-light: #fef3c7;
-        --red: #dc2626; --red-light: #fee2e2;
-        --navbar-height: 68px; --sidebar-width: 264px;
-        --radius: 14px; --radius-sm: 10px;
+        --md-surface: #FFFFFF;
+        --md-background: #F5F7FA;
+        --md-primary: #1976D2;
+        --md-primary-light: #E3F2FD;
+        --md-text-high: #212121;
+        --md-text-medium: #757575;
+        --md-text-disabled: #9E9E9E;
+        --md-divider: #EEEEEE;
+        --md-error: #D32F2F;
+        --md-warning: #FFA000;
+        --md-success: #388E3C;
+        --md-shadow-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        --md-shadow-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        --md-radius: 8px;
+        --navbar-height: 68px;
+        --sidebar-width: 264px;
         --ease: cubic-bezier(0.4, 0, 0.2, 1);
+        --font-family: 'Roboto', system-ui, -apple-system, sans-serif;
     }
     *, *::before, *::after { box-sizing: border-box; }
     html, body {
-        margin: 0; padding: 0; background: var(--bg); color: var(--text);
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        font-size: 14px; line-height: 1.5; overflow-x: hidden; -webkit-font-smoothing: antialiased;
+        margin: 0; padding: 0; background: var(--md-background); color: var(--md-text-high);
+        font-family: var(--font-family); font-size: 14px; line-height: 1.5;
+        overflow-x: hidden; -webkit-font-smoothing: antialiased;
     }
     img, svg { max-width: 100%; display: block; }
     button { font-family: inherit; }
-    a { color: inherit; }
+    a { color: inherit; text-decoration: none; }
     .main-content, .main-content .container {
         width: 100% !important; max-width: 100% !important; margin: 0 !important;
-        padding: 0 !important; background: var(--bg) !important; display: block !important;
+        padding: 0 !important; background: var(--md-background) !important; display: block !important;
     }
 
-    /* NAVBAR & SIDEBAR */
+    /* NAVBAR & SIDEBAR (Kept existing style but refined) */
     .gf-navbar {
         position: fixed; top: 0; left: 0; right: 0; height: var(--navbar-height);
         background: linear-gradient(180deg, #0f3d24 0%, #14532d 45%, #166534 100%);
         display: flex; align-items: center; justify-content: space-between;
-        padding: 0 24px; z-index: 1050; box-shadow: 0 2px 12px rgba(15, 23, 42, 0.15);
+        padding: 0 24px; z-index: 1050; box-shadow: var(--md-shadow-1);
     }
     .gf-navbar-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #fff; flex-shrink: 0; }
     .gf-navbar-logo {
@@ -322,10 +331,10 @@ renderHeader($title);
     .gf-navbar-links li a {
         display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px;
         border-radius: 10px; font-size: 14px; font-weight: 600;
-        color: rgba(255, 255, 255, 0.82); text-decoration: none; white-space: nowrap; transition: all 0.2s var(--ease);
+        color: rgba(255, 255, 255, 0.82); transition: all 0.2s var(--ease);
     }
     .gf-navbar-links li a:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
-    .gf-navbar-links li a.active { background: #fff; color: #14532d; font-weight: 700; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); }
+    .gf-navbar-links li a.active { background: #fff; color: #14532d; font-weight: 700; }
     .gf-navbar-links li a.logout { color: #fca5a5; }
     .gf-navbar-toggle { display: none; width: 42px; height: 42px; place-items: center; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 10px; cursor: pointer; color: #fff; padding: 0; }
     
@@ -344,226 +353,161 @@ renderHeader($title);
     .gf-brand-text { font-size: 16px; font-weight: 800; line-height: 1.2; }
     .gf-brand-sub { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.65); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.1em; }
     .gf-nav-section { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-    .gf-nav-link { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 11px; color: rgba(255, 255, 255, 0.82); font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.2s var(--ease); }
+    .gf-nav-link { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 11px; color: rgba(255, 255, 255, 0.82); font-size: 14px; font-weight: 600; transition: all 0.2s var(--ease); }
     .gf-nav-link:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
     .gf-nav-link.active { background: #fff; color: #14532d; font-weight: 700; }
     .gf-nav-link.logout { color: #fca5a5; margin-top: 12px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.12); border-radius: 0; }
     .gf-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(2px); z-index: 1055; }
     body.gf-sidebar-open .gf-backdrop { display: block; }
 
-    /* MAIN LAYOUT & TYPOGRAPHY */
+    /* MAIN LAYOUT */
     .main {
         padding: calc(var(--navbar-height) + 24px) clamp(16px, 2vw, 28px) 60px;
         max-width: 1400px; margin: 0 auto; width: 100%; min-height: 100vh;
     }
     .page-head {
         display: flex; align-items: center; justify-content: space-between;
-        gap: 16px; margin-bottom: 18px; flex-wrap: wrap;
+        gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
     }
-    .page-head-left h1 { font-size: 20px; font-weight: 800; margin: 0 0 2px; letter-spacing: -0.02em; }
-    .page-head-left p { font-size: 12px; color: var(--text-3); margin: 0; font-weight: 600; }
-    .page-head-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .date-info {
-        font-size: 12px; color: var(--text-2); font-weight: 600;
-        padding: 6px 12px; background: var(--surface);
-        border: 1px solid var(--border); border-radius: 8px;
+    .page-head-left h1 { font-size: 24px; font-weight: 500; margin: 0 0 4px; letter-spacing: -0.01em; color: var(--md-text-high); }
+    .page-head-left p { font-size: 14px; color: var(--md-text-medium); margin: 0; }
+    .page-head-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    
+    /* MATERIAL BUTTONS & CHIPS */
+    .md-btn {
+        display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;
+        border-radius: 4px; font-size: 14px; font-weight: 500;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        background: var(--md-primary); color: #fff;
+        border: none; cursor: pointer; transition: background 0.2s var(--ease);
+        box-shadow: var(--md-shadow-1);
     }
-    .update-btn {
+    .md-btn:hover { background: #1565C0; box-shadow: var(--md-shadow-2); }
+    .md-btn.outline { background: transparent; color: var(--md-primary); box-shadow: none; border: 1px solid var(--md-primary); }
+    .md-btn.outline:hover { background: var(--md-primary-light); }
+    
+    .md-chip {
         display: inline-flex; align-items: center; gap: 6px;
-        padding: 7px 14px; background: var(--primary); color: #fff;
-        border-radius: 8px; font-size: 12px; font-weight: 700;
-        text-decoration: none; transition: all 0.15s var(--ease);
+        padding: 4px 12px; border-radius: 16px;
+        font-size: 12px; font-weight: 600;
+        background: var(--md-divider); color: var(--md-text-medium);
     }
-    .update-btn:hover { background: var(--primary-dark); }
-    .update-btn svg { width: 12px; height: 12px; }
+    .md-chip.success { background: #E8F5E9; color: var(--md-success); }
+    .md-chip.warning { background: #FFF3E0; color: var(--md-warning); }
+    .md-chip.error   { background: #FFEBEE; color: var(--md-error); }
 
-    /* HERO BANNER */
-    .hero-banner {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 22px 26px; margin-bottom: 20px;
-        display: grid; grid-template-columns: 1.4fr 1fr 1fr auto;
+    /* HERO SECTION (Elevated Surface) */
+    .hero-surface {
+        background: var(--md-surface); border-radius: var(--md-radius);
+        padding: 32px; margin-bottom: 24px;
+        box-shadow: var(--md-shadow-1);
+        display: grid; grid-template-columns: 1.5fr 1fr 1fr auto;
         gap: 24px; align-items: center;
     }
-    @media (max-width: 1024px) { .hero-banner { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 640px) { .hero-banner { grid-template-columns: 1fr; padding: 18px; gap: 18px; } }
+    @media (max-width: 1024px) { .hero-surface { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 640px) { .hero-surface { grid-template-columns: 1fr; padding: 24px; gap: 24px; } }
 
-    .hero-main { display: flex; align-items: center; gap: 16px; }
+    .hero-main { display: flex; align-items: center; gap: 20px; }
     .hero-icon-wrap {
-        width: 64px; height: 64px; border-radius: 16px;
-        background: linear-gradient(135deg, #fef3c7, #fcd34d);
-        border: 1px solid #fcd34d;
-        display: grid; place-items: center; flex-shrink: 0; color: #b45309;
+        width: 72px; height: 72px; border-radius: 50%;
+        background: var(--md-primary-light); color: var(--md-primary);
+        display: grid; place-items: center; flex-shrink: 0;
     }
-    .hero-icon-wrap.rain {
-        background: linear-gradient(135deg, var(--primary-light), #bfdbfe);
-        border-color: #93c5fd; color: var(--primary-dark);
-    }
-    .hero-info { min-width: 0; }
-    .hero-label { font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px; }
-    .hero-temp { font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; margin-bottom: 4px; color: var(--text); }
-    .hero-temp .unit { font-size: 18px; font-weight: 700; color: var(--text-2); margin-left: 2px; }
-    .hero-desc { font-size: 13px; color: var(--text-2); font-weight: 700; margin-bottom: 4px; }
-    .hero-meta { display: flex; gap: 12px; font-size: 11.5px; color: var(--text-3); font-weight: 600; flex-wrap: wrap; }
-    .hero-meta strong { color: var(--text); font-weight: 700; }
+    .hero-label { font-size: 12px; font-weight: 600; color: var(--md-text-medium); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .hero-temp { font-size: 48px; font-weight: 400; line-height: 1; margin-bottom: 8px; color: var(--md-text-high); }
+    .hero-temp .unit { font-size: 24px; color: var(--md-text-medium); margin-left: 4px; }
+    .hero-desc { font-size: 16px; font-weight: 500; color: var(--md-text-high); margin-bottom: 8px; }
+    .hero-meta { display: flex; gap: 16px; font-size: 14px; color: var(--md-text-medium); }
+    .hero-meta strong { color: var(--md-text-high); font-weight: 500; }
 
     .hero-stat { text-align: left; }
-    .hero-stat-value { font-size: 24px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: var(--text); margin-bottom: 3px; }
-    .hero-stat-value .unit { font-size: 13px; font-weight: 700; color: var(--text-2); margin-left: 2px; }
-    .hero-stat-label { font-size: 10.5px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
-    .forecast-btn {
-        display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 14px 20px;
-        background: var(--primary); color: #fff; border-radius: var(--radius-sm);
-        font-size: 11px; font-weight: 800; text-decoration: none; transition: all 0.15s var(--ease);
-        text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
-    }
-    .forecast-btn:hover { background: var(--primary-dark); }
+    .hero-stat-value { font-size: 32px; font-weight: 400; line-height: 1; color: var(--md-text-high); margin-bottom: 4px; }
+    .hero-stat-label { font-size: 12px; font-weight: 500; color: var(--md-text-medium); text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* REORGANIZED GRID LAYOUT */
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: 1.6fr 1fr;
-        gap: 20px;
-        align-items: start;
-    }
-    @media (max-width: 1024px) {
-        .dashboard-grid { grid-template-columns: 1fr; }
-    }
-    .grid-left, .grid-right { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+    /* GRID & CARDS */
+    .dashboard-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; align-items: stretch; }
+    @media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    .grid-left, .grid-right { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 
-    /* METRIC STRIP (UPDATED TO SHOW NEW METRICS) */
-    .metric-strip {
-        display: grid; grid-template-columns: repeat(4, 1fr);
-        background: var(--surface); border: 1px solid var(--border);
-        border-radius: var(--radius-sm); overflow: hidden;
+    .md-card {
+        background: var(--md-surface); border-radius: var(--md-radius);
+        box-shadow: var(--md-shadow-1); padding: 24px;
+        display: flex; flex-direction: column; min-width: 0;
     }
-    @media (max-width: 640px) { .metric-strip { grid-template-columns: repeat(2, 1fr); } }
-    .metric-cell { padding: 14px 16px; border-right: 1px solid var(--border-2); }
-    .metric-cell:last-child { border-right: none; }
-    @media (max-width: 640px) {
-        .metric-cell:nth-child(2n) { border-right: none; }
-        .metric-cell:nth-child(-n+2) { border-bottom: 1px solid var(--border-2); }
-    }
-    .metric-label { font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
-    .metric-value { font-size: 22px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: var(--text); display: flex; align-items: baseline; gap: 2px; margin-bottom: 4px; }
-    .metric-value .unit { font-size: 12px; font-weight: 700; color: var(--text-2); }
-    .metric-note { font-size: 10.5px; color: var(--text-3); font-weight: 600; }
+    .md-card-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+    .md-card-title { font-size: 18px; font-weight: 500; color: var(--md-text-high); margin: 0 0 4px; }
+    .md-card-sub { font-size: 13px; color: var(--md-text-medium); margin: 0; }
 
-    /* CARD */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
-    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-    .card-title { font-size: 14px; font-weight: 800; color: var(--text); margin: 0 0 2px; letter-spacing: -0.01em; }
-    .card-sub { font-size: 11.5px; color: var(--text-3); margin: 0; font-weight: 600; }
-    .card-legend { display: inline-flex; align-items: center; gap: 12px; font-size: 10.5px; color: var(--text-2); font-weight: 700; }
-    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
-    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .legend-dot.blue { background: var(--primary); }
-    .legend-dot.teal { background: #0d9488; }
+    /* METRICS (Minimalist) */
+    .md-metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    @media (max-width: 640px) { .md-metric-grid { grid-template-columns: repeat(2, 1fr); } }
+    .md-metric { display: flex; flex-direction: column; }
+    .md-metric-label { font-size: 12px; font-weight: 500; color: var(--md-text-medium); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .md-metric-value { font-size: 28px; font-weight: 400; color: var(--md-text-high); line-height: 1; margin-bottom: 4px; }
+    .md-metric-value .unit { font-size: 14px; color: var(--md-text-medium); margin-left: 2px; }
+    .md-metric-note { font-size: 12px; color: var(--md-text-medium); }
 
     /* HOURLY CHART */
-    .chart-wrap { position: relative; height: 180px; margin: 8px 0 4px; }
-    .chart-svg { width: 100%; height: 100%; overflow: visible; }
+    .chart-wrap { position: relative; flex: 1; min-height: 200px; margin: 16px 0; display: flex; flex-direction: column; }
+    .chart-svg { width: 100%; height: 100%; flex: 1; overflow: visible; }
     .chart-bar { transition: fill 0.15s var(--ease); }
-    .chart-bar:hover { fill: rgba(13,148,136,0.45); }
-    .chart-bar.active { fill: rgba(13,148,136,0.65); }
+    .chart-bar:hover { fill: rgba(25, 118, 210, 0.45); }
+    .chart-bar.active { fill: rgba(25, 118, 210, 0.65); }
     .chart-dot { transition: r 0.15s var(--ease), fill 0.15s var(--ease); }
-    .chart-dot.active { r: 7; fill: #1d4ed8; }
-    .chart-hit:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 50%; }
+    .chart-dot.active { r: 7; fill: #1565C0; }
 
-    .hourly-strip {
-        display: grid; grid-template-columns: repeat(8, 1fr);
-        gap: 4px; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--border-2);
-    }
+    .hourly-strip { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--md-divider); }
     @media (max-width: 640px) { .hourly-strip { grid-template-columns: repeat(4, 1fr); } }
-    .hour-cell {
-        display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px;
-        text-align: center; border-radius: 8px; cursor: pointer; transition: all 0.15s var(--ease); border: 1px solid transparent;
-    }
-    .hour-cell:hover { background: #f1f5f9; }
-    .hour-cell.active { background: var(--primary-light); border-color: #bfdbfe; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15); }
-    .hour-cell:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .hour-time { font-size: 10.5px; font-weight: 800; color: var(--text-2); letter-spacing: 0.02em; }
-    .hour-icon { width: 20px; height: 20px; color: var(--text-2); margin: 2px 0; }
-    .hour-temp { font-size: 13px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
-    .hour-temp.hot { color: var(--amber); }
-    .hour-pop { font-size: 10px; font-weight: 700; color: var(--primary); }
-    .hour-pop.zero { color: var(--text-3); }
+    .hour-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; text-align: center; border-radius: var(--md-radius); cursor: pointer; transition: all 0.15s var(--ease); }
+    .hour-cell:hover { background: var(--md-background); }
+    .hour-cell.active { background: var(--md-primary-light); }
+    .hour-time { font-size: 12px; font-weight: 500; color: var(--md-text-medium); }
+    .hour-icon { width: 24px; height: 24px; color: var(--md-primary); }
+    .hour-temp { font-size: 16px; font-weight: 500; color: var(--md-text-high); }
+    .hour-pop { font-size: 12px; color: var(--md-primary); font-weight: 500; }
 
-    .hour-detail {
-        margin-top: 16px; padding: 14px 16px; background: linear-gradient(135deg, #eff6ff, #f8fafc);
-        border: 1px solid #bfdbfe; border-radius: var(--radius-sm); min-height: 76px; transition: all 0.2s var(--ease);
-    }
-    .hour-detail-empty { font-size: 12px; color: var(--text-3); font-weight: 600; text-align: center; padding: 8px 0; }
-    .hour-detail-content { animation: fadeInDetail 0.2s var(--ease); }
-    @keyframes fadeInDetail { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-    .hour-detail-time { font-size: 13px; font-weight: 800; color: var(--primary-dark); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-    .hour-detail-time::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
-    .hour-detail-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .hd-col-label { font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-    .hd-col-value { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+    /* HOUR DETAIL PANEL */
+    .md-hour-detail { margin-top: 16px; padding: 16px; background: var(--md-primary-light); border-radius: var(--md-radius); }
+    .md-hour-detail-empty { font-size: 14px; color: var(--md-primary); font-weight: 500; text-align: center; }
+    .md-hour-detail-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .md-hd-label { font-size: 12px; font-weight: 500; color: var(--md-primary); text-transform: uppercase; margin-bottom: 4px; }
+    .md-hd-value { font-size: 20px; font-weight: 500; color: var(--md-text-high); }
 
-    /* ACTION CENTER & ADVISORIES (CONDENSED) */
-    .guide-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
-    .guide-title { font-size: 14px; font-weight: 800; color: var(--text); }
-    .guide-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
-    .guide-badge.green { background: var(--green-light); color: #15803d; }
-    .guide-badge.amber { background: var(--amber-light); color: #92400e; }
-    .guide-badge.red   { background: var(--red-light); color: #b91c1c; }
-    .guide-sub { font-size: 11.5px; color: var(--text-3); margin: 0 0 14px; font-weight: 600; }
+    /* FORECAST (Minimalist Rows) */
+    .md-forecast-list { display: flex; flex-direction: column; gap: 8px; }
+    .md-forecast-row { display: flex; align-items: center; gap: 16px; padding: 12px 16px; background: var(--md-background); border-radius: var(--md-radius); }
+    .md-forecast-day { width: 64px; font-size: 14px; font-weight: 500; color: var(--md-text-high); }
+    .md-forecast-icon { width: 24px; height: 24px; color: var(--md-text-medium); }
+    .md-forecast-temps { flex: 1; display: flex; gap: 12px; font-size: 14px; font-weight: 500; }
+    .md-forecast-hi { color: var(--md-text-high); }
+    .md-forecast-lo { color: var(--md-text-medium); }
+    .md-forecast-pop { font-size: 13px; font-weight: 500; color: var(--md-primary); }
 
-    .guide-item { padding: 10px 14px; background: #f8fafc; border: 1px solid var(--border-2); border-radius: var(--radius-sm); margin-bottom: 8px; }
-    .guide-item:last-child { margin-bottom: 0; }
-    .guide-item.amber { background: #fffbeb; border-color: #fde68a; }
-    .guide-item.green { background: #f0fdf4; border-color: #bbf7d0; }
-    .guide-item.red   { background: #fef2f2; border-color: #fecaca; }
-    .guide-item-title { font-size: 12px; font-weight: 800; color: var(--text); margin-bottom: 2px; line-height: 1.3; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .guide-item-tag { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .guide-item.green .guide-item-tag { background: var(--green-light); color: #15803d; }
-    .guide-item.amber .guide-item-tag { background: var(--amber-light); color: #92400e; }
-    .guide-item.red   .guide-item-tag { background: var(--red-light); color: #b91c1c; }
-    .guide-item-desc { font-size: 11px; color: var(--text-2); line-height: 1.4; }
+    /* ACTION CENTER (Material Alerts) */
+    .md-alert { display: flex; gap: 12px; padding: 16px; border-radius: var(--md-radius); margin-bottom: 12px; font-size: 14px; line-height: 1.5; }
+    .md-alert-icon { flex-shrink: 0; margin-top: 2px; }
+    .md-alert-content { flex: 1; }
+    .md-alert-title { font-weight: 500; margin-bottom: 4px; }
+    .md-alert.high { background: #FFEBEE; color: var(--md-error); }
+    .md-alert.medium { background: #FFF3E0; color: var(--md-warning); }
+    .md-alert.success { background: #E8F5E9; color: var(--md-success); }
+    .md-alert-text { color: var(--md-text-high); font-weight: 400; }
 
-    .advisory-section { margin-bottom: 14px; }
-    .advisory-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
-    .advisory-title { font-size: 12px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; }
-    .advisory-count-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; font-size: 9.5px; font-weight: 800; background: var(--red); color: #fff; }
-    .advisory-priority-badge { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .advisory-priority-badge.high { background: var(--red-light); color: #b91c1c; }
-    .advisory-priority-badge.medium { background: var(--amber-light); color: #92400e; }
-    .advisory-priority-badge.low { background: var(--border-2); color: var(--text-2); }
-
-    .advisory-option { display: block; padding: 8px 10px; margin-bottom: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s var(--ease); border: 1.5px solid var(--border); background: #fafbfc; }
-    .advisory-option:hover { background: #f1f5f9; }
-    .advisory-option.high { border-color: #fecaca; background: #fef2f2; }
-    .advisory-option.medium { border-color: #fde68a; background: #fffbeb; }
-    .advisory-option input[type="radio"] { margin-right: 6px; accent-color: var(--green); cursor: pointer; }
-    .advisory-option-title { font-size: 12px; font-weight: 800; color: var(--text); display: inline; }
-    .advisory-option-msg { margin: 4px 0 0 20px; font-size: 11px; color: var(--text-2); line-height: 1.4; }
-
-    .send-advisory-btn { width: 100%; padding: 10px; margin-top: 8px; background: #fff; color: #15803d; border: 1.5px solid #15803d; border-radius: var(--radius-sm); font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s var(--ease); }
-    .send-advisory-btn:hover { background: #f0fdf4; }
-
-    .no-advisory { margin-bottom: 14px; padding: 12px; border-radius: var(--radius-sm); background: #ecfdf5; border: 1px solid #bbf7d0; text-align: center; }
-    .no-advisory p { margin: 0; font-size: 12px; color: #065f46; font-weight: 700; }
-    .send-result { margin-bottom: 12px; padding: 10px 12px; border-radius: var(--radius-sm); }
-    .send-result.success { background: #dcfce7; border: 1px solid #bbf7d0; }
-    .send-result.failed { background: #fee2e2; border: 1px solid #fecaca; }
-    .send-result strong { font-size: 12px; display: block; margin-bottom: 2px; }
-    .send-result.success strong { color: #166534; }
-    .send-result.failed strong { color: #b91c1c; }
-    .send-result p { margin: 0; font-size: 11px; color: var(--text-2); line-height: 1.4; }
-
-    /* 5-DAY FORECAST */
-    .forecast-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #f8fafc; border: 1px solid var(--border-2); border-radius: var(--radius-sm); margin-bottom: 6px; }
-    .forecast-row:last-child { margin-bottom: 0; }
-    .forecast-day { width: 56px; font-size: 11.5px; font-weight: 800; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.04em; }
-    .forecast-icon { width: 24px; height: 24px; color: var(--primary); flex-shrink: 0; }
-    .forecast-temps { flex: 1; display: flex; gap: 8px; font-size: 12.5px; font-weight: 800; }
-    .forecast-hi { color: var(--text); }
-    .forecast-lo { color: var(--text-3); font-weight: 600; }
-    .forecast-pop { font-size: 11px; color: var(--primary); font-weight: 700; }
-
+    .md-radio-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .md-radio-label { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid var(--md-divider); border-radius: var(--md-radius); cursor: pointer; transition: border 0.2s; }
+    .md-radio-label:hover { border-color: var(--md-primary); }
+    .md-radio-label input { margin-top: 4px; }
+    
+    /* MODEL BOUNDS TABLE */
+    .md-table-wrap { overflow-x: auto; margin-top: 16px; }
+    .md-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .md-table th { text-align: left; padding: 12px; font-weight: 500; color: var(--md-text-medium); border-bottom: 1px solid var(--md-divider); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+    .md-table td { padding: 12px; border-bottom: 1px solid var(--md-divider); color: var(--md-text-high); }
+    .md-table tr:last-child td { border-bottom: none; }
+    .md-table tr:hover { background: var(--md-background); }
+    .md-table .offline-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; background: #FFEBEE; color: var(--md-error); font-size: 10px; font-weight: 600; margin-left: 8px; }
+    
+    /* MEDIA QUERIES */
     @media (max-width: 991.98px) {
         .gf-navbar { padding: 0 16px; } .gf-navbar-links { display: none; } .gf-navbar-toggle { display: grid; }
     }
@@ -572,8 +516,8 @@ renderHeader($title);
         .gf-navbar-logo { width: 38px; height: 38px; font-size: 20px; }
         .gf-navbar-title { font-size: 17px; }
         .main { padding: calc(var(--navbar-height) + 16px) 12px 60px; }
-        .hero-temp { font-size: 28px; }
-        .hero-temp .unit { font-size: 15px; }
+        .hero-temp { font-size: 36px; }
+        .hero-temp .unit { font-size: 18px; }
         .hero-icon-wrap { width: 56px; height: 56px; }
     }
 </style>
@@ -616,23 +560,23 @@ renderHeader($title);
                     <p><?php echo MANOLO_FORTICH_NAME; ?></p>
                 </div>
                 <div class="page-head-right">
-                    <span class="date-info"><?php echo date('D, M j, Y'); ?></span>
-                    <a href="?refresh=1" class="update-btn"><?php echo icon('refresh', 12); ?> Refresh</a>
+                    <span class="md-chip"><?php echo date('D, M j, Y'); ?></span>
+                    <a href="?refresh=1" class="md-btn"><?php echo icon('refresh', 16); ?> Refresh</a>
                 </div>
             </div>
 
-            <!-- HERO BANNER -->
-            <div class="hero-banner">
+            <!-- HERO SECTION -->
+            <div class="hero-surface">
                 <div class="hero-main">
-                    <div class="hero-icon-wrap <?php echo $weatherMain === 'Rain' ? 'rain' : ''; ?>">
-                        <?php echo wxIcon(owIconName($weatherIcon), 44); ?>
+                    <div class="hero-icon-wrap">
+                        <?php echo wxIcon(owIconName($weatherIcon), 40); ?>
                     </div>
                     <div class="hero-info">
-                        <div class="hero-label">Now</div>
+                        <div class="hero-label">Current Weather</div>
                         <div class="hero-temp"><?php echo $temp; ?><span class="unit">°C</span></div>
                         <div class="hero-desc"><?php echo htmlspecialchars($weatherDesc); ?></div>
                         <div class="hero-meta">
-                            <span>Feels <strong><?php echo $feelsLike; ?>°</strong></span>
+                            <span>Feels like <strong><?php echo $feelsLike; ?>°</strong></span>
                             <span>Wind <strong><?php echo $windSpeed; ?> km/h</strong></span>
                         </div>
                     </div>
@@ -645,59 +589,58 @@ renderHeader($title);
                     <div class="hero-stat-value"><?php echo $rainToday; ?><span class="unit">mm</span></div>
                     <div class="hero-stat-label">Rain Today</div>
                 </div>
-                <a href="#forecast" class="forecast-btn">5-Day Forecast</a>
+                <a href="#forecast" class="md-btn outline">5-Day Forecast</a>
             </div>
 
-            <!-- DASHBOARD GRID -->
+            <!-- MAIN GRID -->
             <div class="dashboard-grid">
 
-                <!-- ROW 1, LEFT (Heat Index + Hourly Forecast) -->
+                <!-- LEFT COLUMN -->
                 <div class="grid-left">
-                    
-                    <!-- METRIC STRIP (HEAT INDEX) -->
-                    <div class="metric-strip">
-                        <div class="metric-cell">
-                            <div class="metric-label">Heat Index (THI)</div>
-                            <div class="metric-value"><?php echo round($thi); ?><span class="unit"></span></div>
-                            <div class="metric-note"><?php echo $heat['label']; ?> stress</div>
-                        </div>
-                        <div class="metric-cell">
-                            <div class="metric-label">Rain Tonight</div>
-                            <div class="metric-value"><?php echo $rainTonight; ?><span class="unit">mm</span></div>
-                            <div class="metric-note"><?php echo $rainTonight > 2 ? 'Bring to shelter' : 'Minimal'; ?></div>
-                        </div>
-                        <div class="metric-cell">
-                            <div class="metric-label">Wind Direction</div>
-                            <div class="metric-value"><?php echo $windDir; ?></div>
-                            <div class="metric-note"><?php echo $windSpeed; ?> km/h</div>
-                        </div>
-                        <div class="metric-cell">
-                            <div class="metric-label">Grazing Status</div>
-                            <div class="metric-value" style="font-size: 16px; margin-top: 4px;"><?php echo $hasHighPop ? 'Caution' : ($temp >= 32 ? 'Limited' : 'Safe'); ?></div>
-                            <div class="metric-note"><?php echo $hasHighPop ? 'Rain likely' : 'Good conditions'; ?></div>
+
+                    <!-- METRIC STRIP -->
+                    <div class="md-card">
+                        <div class="md-metric-grid">
+                            <div class="md-metric">
+                                <div class="md-metric-label">Heat Index (THI)</div>
+                                <div class="md-metric-value"><?php echo round($thi); ?><span class="unit"></span></div>
+                                <div class="md-metric-note"><?php echo $heat['label']; ?> stress</div>
+                            </div>
+                            <div class="md-metric">
+                                <div class="md-metric-label">Rain Tonight</div>
+                                <div class="md-metric-value"><?php echo $rainTonight; ?><span class="unit">mm</span></div>
+                                <div class="md-metric-note"><?php echo $rainTonight > 2 ? 'Bring to shelter' : 'Minimal'; ?></div>
+                            </div>
+                            <div class="md-metric">
+                                <div class="md-metric-label">Wind Direction</div>
+                                <div class="md-metric-value"><?php echo $windDir; ?></div>
+                                <div class="md-metric-note"><?php echo $windSpeed; ?> km/h</div>
+                            </div>
+                            <div class="md-metric">
+                                <div class="md-metric-label">Grazing Status</div>
+                                <div class="md-metric-value" style="font-size: 20px; margin-top: 4px;"><?php echo $hasHighPop ? 'Caution' : ($temp >= 32 ? 'Limited' : 'Safe'); ?></div>
+                                <div class="md-metric-note"><?php echo $hasHighPop ? 'Rain likely' : 'Good conditions'; ?></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- HOURLY CHART -->
-                    <div class="card">
-                        <div class="card-head">
+                    <!-- HOURLY FORECAST -->
+                    <div class="md-card">
+                        <div class="md-card-header">
                             <div>
-                                <h3 class="card-title">Hourly Forecast</h3>
-                                <p class="card-sub">Next 24 hours · click a point for details</p>
+                                <h2 class="md-card-title">Hourly Forecast</h2>
+                                <p class="md-card-sub">Next 24 hours</p>
                             </div>
-                            <div class="card-legend">
-                                <span class="legend-item"><span class="legend-dot blue"></span> Temp</span>
-                                <span class="legend-item"><span class="legend-dot teal"></span> Rain</span>
-                            </div>
+                            <span class="md-chip">Click a point for details</span>
                         </div>
 
                         <div class="chart-wrap">
                             <svg class="chart-svg" viewBox="0 0 800 200" preserveAspectRatio="none" id="hourlyChart">
                                 <defs>
-                                    <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#60a5fa"/></linearGradient>
-                                    <linearGradient id="tempFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(37,99,235,0.15)"/><stop offset="100%" stop-color="rgba(37,99,235,0)"/></linearGradient>
+                                    <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1976D2"/><stop offset="100%" stop-color="#64B5F6"/></linearGradient>
+                                    <linearGradient id="tempFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(25,118,210,0.15)"/><stop offset="100%" stop-color="rgba(25,118,210,0)"/></linearGradient>
                                 </defs>
-                                <g stroke="#f1f5f9" stroke-width="1">
+                                <g stroke="#EEEEEE" stroke-width="1">
                                     <line x1="0" y1="50" x2="800" y2="50"/><line x1="0" y1="100" x2="800" y2="100"/><line x1="0" y1="150" x2="800" y2="150"/>
                                 </g>
                                 <?php
@@ -723,226 +666,249 @@ renderHeader($title);
                                 $fillD = $pathD . ' L ' . $chartW . ' ' . $chartH . ' L 0 ' . $chartH . ' Z';
                                 ?>
                                 <?php foreach ($rainBars as $i => $bar): ?>
-                                    <rect x="<?php echo $bar['x'] - 8; ?>" y="<?php echo $chartH - $bar['h']; ?>" width="16" height="<?php echo $bar['h']; ?>" fill="rgba(13,148,136,0.22)" rx="3" class="chart-bar" data-index="<?php echo $i; ?>" style="cursor:pointer;"/>
+                                    <rect x="<?php echo $bar['x'] - 8; ?>" y="<?php echo $chartH - $bar['h']; ?>" width="16" height="<?php echo $bar['h']; ?>" fill="rgba(25,118,210,0.15)" rx="3" class="chart-bar" data-index="<?php echo $i; ?>" style="cursor:pointer;"/>
                                 <?php endforeach; ?>
                                 <path d="<?php echo $fillD; ?>" fill="url(#tempFill)"/>
                                 <path d="<?php echo $pathD; ?>" fill="none" stroke="url(#tempGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                                 <?php foreach ($tempPoints as $i => $pt): ?>
                                     <circle cx="<?php echo $pt[0]; ?>" cy="<?php echo $pt[1]; ?>" r="16" fill="transparent" class="chart-hit" data-index="<?php echo $i; ?>" style="cursor:pointer;"/>
-                                    <circle cx="<?php echo $pt[0]; ?>" cy="<?php echo $pt[1]; ?>" r="5" fill="#2563eb" stroke="#fff" stroke-width="2.5" class="chart-dot" data-index="<?php echo $i; ?>" style="pointer-events:none;"/>
-                                    <text x="<?php echo $pt[0]; ?>" y="<?php echo $pt[1] - 12; ?>" text-anchor="middle" font-size="11" font-weight="800" fill="#1d4ed8" font-family="system-ui, sans-serif" style="pointer-events:none;"><?php echo $hourlyData[$i]['temp']; ?>°</text>
+                                    <circle cx="<?php echo $pt[0]; ?>" cy="<?php echo $pt[1]; ?>" r="5" fill="#1976D2" stroke="#fff" stroke-width="2.5" class="chart-dot" data-index="<?php echo $i; ?>" style="pointer-events:none;"/>
+                                    <text x="<?php echo $pt[0]; ?>" y="<?php echo $pt[1] - 12; ?>" text-anchor="middle" font-size="12" font-weight="600" fill="#1976D2" font-family="var(--font-family)" style="pointer-events:none;"><?php echo $hourlyData[$i]['temp']; ?>°</text>
                                 <?php endforeach; ?>
                             </svg>
                         </div>
 
-                        <!-- HOUR DETAIL PANEL -->
-                        <div class="hour-detail" id="hourDetail">
-                            <div class="hour-detail-empty" id="hourDetailEmpty">Tap a point or an hour below to see detailed forecast</div>
-                            <div class="hour-detail-content" id="hourDetailContent" style="display:none;">
-                                <div class="hour-detail-time" id="hdTime">—</div>
-                                <div class="hour-detail-row">
-                                    <div class="hd-col"><div class="hd-col-label">Temperature</div><div class="hd-col-value" id="hdTemp">—</div></div>
-                                    <div class="hd-col"><div class="hd-col-label">Rain Chance</div><div class="hd-col-value" id="hdPop">—</div></div>
-                                    <div class="hd-col"><div class="hd-col-label">Condition</div><div class="hd-col-value" id="hdCond">—</div></div>
+                        <div class="md-hour-detail" id="hourDetail">
+                            <div class="md-hour-detail-empty" id="hourDetailEmpty">Tap a point or an hour below to see detailed forecast</div>
+                            <div class="md-hour-detail-content" id="hourDetailContent" style="display:none;">
+                                <div class="md-card-title" id="hdTime" style="margin-bottom: 12px;">—</div>
+                                <div class="md-hour-detail-row">
+                                    <div><div class="md-hd-label">Temperature</div><div class="md-hd-value" id="hdTemp">—</div></div>
+                                    <div><div class="md-hd-label">Rain Chance</div><div class="md-hd-value" id="hdPop">—</div></div>
+                                    <div><div class="md-hd-label">Condition</div><div class="md-hd-value" id="hdCond">—</div></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- HOURLY STRIP -->
                         <div class="hourly-strip">
                             <?php foreach ($hourlyData as $i => $h): $isHot = $h['temp'] >= 30; ?>
                                 <div class="hour-cell" data-index="<?php echo $i; ?>" data-time="<?php echo htmlspecialchars($h['time']); ?>" data-temp="<?php echo $h['temp']; ?>" data-pop="<?php echo $h['pop']; ?>" data-icon="<?php echo htmlspecialchars(owIconName($h['icon'])); ?>" role="button" tabindex="0">
                                     <span class="hour-time"><?php echo $h['time']; ?></span>
-                                    <div class="hour-icon"><?php echo wxIcon(owIconName($h['icon']), 20); ?></div>
-                                    <span class="hour-temp <?php echo $isHot ? 'hot' : ''; ?>"><?php echo $h['temp']; ?>°</span>
-                                    <span class="hour-pop <?php echo $h['pop'] === 0 ? 'zero' : ''; ?>"><?php echo $h['pop']; ?>%</span>
+                                    <div class="hour-icon"><?php echo wxIcon(owIconName($h['icon']), 24); ?></div>
+                                    <span class="hour-temp"><?php echo $h['temp']; ?>°</span>
+                                    <span class="hour-pop"><?php echo $h['pop']; ?>%</span>
                                 </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
+
+                    <!-- 5-DAY FORECAST -->
+                    <div class="md-card" id="forecast">
+                        <div class="md-card-header">
+                            <div>
+                                <h2 class="md-card-title">5-Day Forecast</h2>
+                                <p class="md-card-sub"><?php echo MANOLO_FORTICH_NAME; ?></p>
+                            </div>
+                        </div>
+                        <div class="md-forecast-list">
+                            <?php
+                            for ($i = 0; $i < 5; $i++):
+                                if (isset($dailyForecast[$i])) {
+                                    $d = $dailyForecast[$i];
+                                    $label = $i === 0 ? 'Today' : date('D', $d['dt']);
+                                    $iconName = owIconName($d['icon']);
+                                    $tempHi = $d['temp_hi'];
+                                    $tempLo = $d['temp_lo'];
+                                    $pop = $d['pop'];
+                                } else {
+                                    $label = $i === 0 ? 'Today' : date('D', strtotime("+$i days"));
+                                    $iconName = ['sun','cloud-sun','cloud','cloud-rain','cloud-sun'][$i];
+                                    $tempHi = [28, 29, 27, 26, 28][$i];
+                                    $tempLo = [22, 23, 22, 21, 22][$i];
+                                    $pop = [10, 20, 30, 60, 25][$i];
+                                }
+                            ?>
+                                <div class="md-forecast-row">
+                                    <div class="md-forecast-day"><?php echo $label; ?></div>
+                                    <div class="md-forecast-icon"><?php echo wxIcon($iconName, 24); ?></div>
+                                    <div class="md-forecast-temps">
+                                        <span class="md-forecast-hi"><?php echo $tempHi; ?>°</span>
+                                        <span class="md-forecast-lo"><?php echo $tempLo; ?>°</span>
+                                    </div>
+                                    <div class="md-forecast-pop"><?php echo $pop; ?>%</div>
+                                </div>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+
                 </div>
 
-                <!-- ROW 1, RIGHT (Model Bounds Analysis) -->
+                <!-- RIGHT COLUMN -->
                 <div class="grid-right">
-                    <!-- MODEL BOUNDS ANALYSIS -->
-                    <div class="card">
-                        <div class="guide-head">
-                            <div class="guide-title">Model Bounds Analysis</div>
-                            <span class="guide-badge green" id="boundsSourcesBadge">
+
+                    <!-- MODEL BOUNDS ANALYSIS (Now Top Right) -->
+                    <div class="md-card">
+                        <div class="md-card-header">
+                            <div>
+                                <h2 class="md-card-title">Model Bounds Analysis</h2>
+                                <p class="md-card-sub">Interpolated mean with min/max envelope</p>
+                            </div>
+                            <span class="md-chip <?php echo ($boundsData && $boundsData['active'] == 4) ? 'success' : 'warning'; ?>">
                                 <?php if ($boundsData): ?><?php echo (int)$boundsData['active']; ?>/<?php echo (int)$boundsData['total']; ?> sources<?php else: ?>unavailable<?php endif; ?>
                             </span>
                         </div>
-                        <p class="guide-sub">Interpolated mean with min/max envelope</p>
 
                         <?php if ($boundsData && !empty($boundsData['bounds'])): ?>
                             <?php $b = $boundsData['bounds']; $src = $boundsData['sources']; $chartData = $boundsData['chart_data'] ?? null; ?>
                             
-                            <div class="metric-strip" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 14px; background: #f8fafc;">
+                            <div class="md-metric-grid" style="margin-bottom: 24px;">
                                 <?php
                                 $rows = [['Temperature', $b['temp'], '°C', 1], ['Humidity', $b['humidity'], '%', 0], ['Wind', $b['wind'], ' km/h', 1], ['Rain (1h)', $b['rain'], ' mm', 1]];
                                 foreach ($rows as $r):
                                     [$label, $stat, $unit, $dp] = $r;
                                     $has = $stat && $stat['value'] !== null;
                                 ?>
-                                    <div class="metric-cell">
-                                        <div class="metric-label"><?php echo $label; ?></div>
-                                        <div class="metric-value"><?php echo $has ? number_format($stat['value'], $dp) : '—'; ?><span class="unit"><?php echo $unit; ?></span></div>
-                                        <div class="metric-note"><?php if ($has): ?>Bounds <?php echo number_format($stat['min'], $dp); ?> – <?php echo number_format($stat['max'], $dp); ?> · spread <?php echo number_format($stat['spread'], $dp); ?><?php else: ?>No data<?php endif; ?></div>
+                                    <div class="md-metric">
+                                        <div class="md-metric-label"><?php echo $label; ?></div>
+                                        <div class="md-metric-value"><?php echo $has ? number_format($stat['value'], $dp) : '—'; ?><span class="unit"><?php echo $unit; ?></span></div>
+                                        <div class="md-metric-note"><?php if ($has): ?>Bounds <?php echo number_format($stat['min'], $dp); ?> – <?php echo number_format($stat['max'], $dp); ?><?php else: ?>No data<?php endif; ?></div>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
 
                             <?php if ($chartData && !empty($chartData['time'])): ?>
-                            <div style="margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border-2);">
-                                <div style="font-size: 11px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">24h Temperature Trendline</div>
+                            <div style="margin-bottom: 24px;">
+                                <div style="font-size: 12px; font-weight: 500; color: var(--md-text-medium); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">24h Temperature Trendline</div>
                                 <div style="position: relative; height: 220px; width: 100%;"><canvas id="boundsChart"></canvas></div>
                             </div>
                             <?php endif; ?>
 
-                            <div style="overflow-x: auto;">
-                                <table style="width:100%; border-collapse: collapse; font-size: 11.5px;">
+                            <div class="md-table-wrap">
+                                <table class="md-table">
                                     <thead>
-                                        <tr style="background:#fafbfc; color:#94a3b8; text-transform: uppercase; letter-spacing:0.05em; font-size:10px;">
-                                            <th style="text-align:left; padding:8px 10px; border-bottom:1px solid #eef2f6;">Source</th>
-                                            <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eef2f6;">Temp</th>
-                                            <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eef2f6;">Humid</th>
-                                            <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eef2f6;">Wind</th>
-                                            <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eef2f6;">Rain</th>
+                                        <tr>
+                                            <th>Source</th>
+                                            <th style="text-align:right;">Temp</th>
+                                            <th style="text-align:right;">Humid</th>
+                                            <th style="text-align:right;">Wind</th>
+                                            <th style="text-align:right;">Rain</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($src as $name => $s): ?>
                                             <?php $hasData = !empty($s['available']) && ($s['temp'] !== null || $s['humidity'] !== null || $s['wind'] !== null || $s['rain'] !== null); ?>
                                             <tr>
-                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; color:#0f172a; font-weight:700;">
+                                                <td style="font-weight: 500;">
                                                     <?php echo htmlspecialchars(str_replace('_', ' ', $name)); ?>
-                                                    <?php if (!$hasData): ?><span style="display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; background:#fee2e2; color:#b91c1c; font-size:9.5px; font-weight:800;">OFFLINE</span><?php endif; ?>
+                                                    <?php if (!$hasData): ?><span class="offline-badge">OFFLINE</span><?php endif; ?>
                                                 </td>
-                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; text-align:right; color:#475569;"><?php echo $hasData && $s['temp'] !== null ? number_format($s['temp'], 1) . '°C' : '—'; ?></td>
-                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; text-align:right; color:#475569;"><?php echo $hasData && $s['humidity'] !== null ? number_format($s['humidity'], 0) . '%' : '—'; ?></td>
-                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; text-align:right; color:#475569;"><?php echo $hasData && $s['wind'] !== null ? number_format($s['wind'], 1) : '—'; ?></td>
-                                                <td style="padding:8px 10px; border-bottom:1px solid #f1f5f9; text-align:right; color:#475569;"><?php echo $hasData && $s['rain'] !== null ? number_format($s['rain'], 1) : '—'; ?></td>
+                                                <td style="text-align:right;"><?php echo $hasData && $s['temp'] !== null ? number_format($s['temp'], 1) . '°C' : '—'; ?></td>
+                                                <td style="text-align:right;"><?php echo $hasData && $s['humidity'] !== null ? number_format($s['humidity'], 0) . '%' : '—'; ?></td>
+                                                <td style="text-align:right;"><?php echo $hasData && $s['wind'] !== null ? number_format($s['wind'], 1) : '—'; ?></td>
+                                                <td style="text-align:right;"><?php echo $hasData && $s['rain'] !== null ? number_format($s['rain'], 1) : '—'; ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
                             </div>
-                            <div style="margin-top:10px; padding:10px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-size:11px; color:#166534; line-height:1.5;">
-                                <strong>Interpolation:</strong> mean of available sources. <strong>Bounds:</strong> min/max across sources.
-                            </div>
                         <?php else: ?>
-                            <div style="padding:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; font-size:12px; color:#b91c1c;"><?php echo htmlspecialchars($boundsError ?: 'Bounds data unavailable'); ?></div>
+                            <div class="md-alert high">
+                                <div class="md-alert-icon">⚠️</div>
+                                <div class="md-alert-content">
+                                    <div class="md-alert-title">Data Unavailable</div>
+                                    <div class="md-alert-text"><?php echo htmlspecialchars($boundsError ?: 'Could not load model bounds.'); ?></div>
+                                </div>
+                            </div>
                         <?php endif; ?>
                     </div>
-                </div>
 
-            </div>
-
-            <!-- SECOND GRID (Bottom Row) -->
-            <div class="dashboard-grid" style="margin-top: 20px;">
-
-                <!-- ROW 2, LEFT (5-Day Forecast) -->
-                <div class="grid-left">
-                    <div class="card" id="forecast">
-                        <div class="guide-head">
-                            <div class="guide-title">5-Day Forecast</div>
-                        </div>
-                        <p class="guide-sub"><?php echo MANOLO_FORTICH_NAME; ?></p>
-
-                        <?php
-                        for ($i = 0; $i < 5; $i++):
-                            if (isset($dailyForecast[$i])) {
-                                $d = $dailyForecast[$i];
-                                $label = $i === 0 ? 'Today' : date('D', $d['dt']);
-                                $iconName = owIconName($d['icon']);
-                                $tempHi = $d['temp_hi'];
-                                $tempLo = $d['temp_lo'];
-                                $pop = $d['pop'];
-                            } else {
-                                $label = $i === 0 ? 'Today' : date('D', strtotime("+$i days"));
-                                $iconName = ['sun','cloud-sun','cloud','cloud-rain','cloud-sun'][$i];
-                                $tempHi = [28, 29, 27, 26, 28][$i];
-                                $tempLo = [22, 23, 22, 21, 22][$i];
-                                $pop = [10, 20, 30, 60, 25][$i];
-                            }
-                        ?>
-                            <div class="forecast-row">
-                                <div class="forecast-day"><?php echo $label; ?></div>
-                                <div class="forecast-icon"><?php echo wxIcon($iconName, 24); ?></div>
-                                <div class="forecast-temps">
-                                    <span class="forecast-hi"><?php echo $tempHi; ?>°</span>
-                                    <span class="forecast-lo"><?php echo $tempLo; ?>°</span>
-                                </div>
-                                <div class="forecast-pop"><?php echo $pop; ?>%</div>
+                    <!-- ACTION CENTER (Now Bottom Right) -->
+                    <div class="md-card">
+                        <div class="md-card-header">
+                            <div>
+                                <h2 class="md-card-title">Action Center</h2>
+                                <p class="md-card-sub">Advisories and grazing tips</p>
                             </div>
-                        <?php endfor; ?>
-                    </div>
-                </div>
-
-                <!-- ROW 2, RIGHT (Action Center) -->
-                <div class="grid-right">
-                    <div class="card">
-                        <div class="guide-head">
-                            <div class="guide-title">Action Center</div>
-                            <span class="guide-badge <?php if ($heat['level'] === 'high') echo 'red'; elseif ($heat['level'] === 'mid') echo 'amber'; else echo 'green'; ?>">Priority</span>
+                            <span class="md-chip <?php echo $heat['level'] === 'high' ? 'error' : ($heat['level'] === 'mid' ? 'warning' : 'success'); ?>">
+                                Priority
+                            </span>
                         </div>
-                        <p class="guide-sub">Urgent advisories and grazing tips</p>
 
                         <?php if (!empty($advisories)): ?>
-                            <div class="advisory-section" style="margin-top:0; padding-top:0; border-top:none;">
-                                <div class="advisory-header">
-                                    <div class="advisory-title">
-                                        ⚠️ Active Advisories
-                                        <span class="advisory-count-badge"><?php echo count($advisories); ?></span>
-                                    </div>
-                                    <span class="advisory-priority-badge <?php echo $highestPriority; ?>"><?php echo strtoupper($highestPriority); ?> PRIORITY</span>
-                                </div>
-                                <form method="POST">
+                            <form method="POST">
+                                <div class="md-radio-group">
                                     <?php foreach ($advisories as $i => $adv): ?>
-                                        <label class="advisory-option <?php echo $adv['priority']; ?>">
+                                        <label class="md-radio-label <?php echo $adv['priority']; ?>">
                                             <input type="radio" name="advisory_index" value="<?php echo $i; ?>" <?php echo $i === 0 ? 'checked' : ''; ?>>
-                                            <span class="advisory-option-title"><?php echo htmlspecialchars($adv['title']); ?></span>
-                                            <p class="advisory-option-msg"><?php echo htmlspecialchars($adv['message']); ?></p>
+                                            <div>
+                                                <div class="md-alert-title" style="color: <?php echo $adv['priority'] === 'high' ? 'var(--md-error)' : 'var(--md-warning)'; ?>;">
+                                                    <?php echo htmlspecialchars($adv['title']); ?>
+                                                </div>
+                                                <div class="md-alert-text" style="font-size: 13px; margin-top: 4px;">
+                                                    <?php echo htmlspecialchars($adv['message']); ?>
+                                                </div>
+                                            </div>
                                         </label>
                                     <?php endforeach; ?>
-                                    <button type="submit" name="send_advisory" class="send-advisory-btn" onclick="return confirm('Ipadala ang SMS advisory sa tanan opted-in farmers?');">📱 Send Advisory via SMS</button>
-                                </form>
-                            </div>
+                                </div>
+                                <button type="submit" name="send_advisory" class="md-btn" style="width: 100%; justify-content: center;" onclick="return confirm('Ipadala ang SMS advisory sa tanan opted-in farmers?');">
+                                    Send Advisory via SMS
+                                </button>
+                            </form>
                         <?php else: ?>
-                            <div class="no-advisory" style="margin-top:0;">
-                                <p>✅ Walay active advisory. Maayo ang panahon para sa goats.</p>
+                            <div class="md-alert success">
+                                <div class="md-alert-icon">✅</div>
+                                <div class="md-alert-content">
+                                    <div class="md-alert-title">No Active Advisories</div>
+                                    <div class="md-alert-text">Weather conditions are optimal for livestock.</div>
+                                </div>
                             </div>
                         <?php endif; ?>
 
                         <?php if ($sendResult): ?>
-                            <div class="send-result <?php echo $sendResult['success'] ? 'success' : 'failed'; ?>" style="margin-bottom: 12px;">
-                                <strong><?php if ($sendResult['success']): ?>✅ Advisory sent successfully!<?php else: ?>❌ Failed to send advisory<?php endif; ?></strong>
-                                <p><?php if ($sendResult['success']): ?>Sent to <strong><?php echo $sendResult['success_count']; ?></strong> of <strong><?php echo $sendResult['recipient_count']; ?></strong> farmers.<?php else: ?>Error: <?php echo htmlspecialchars($sendResult['error'] ?? 'Unknown error'); ?><?php endif; ?></p>
+                            <div class="md-alert <?php echo $sendResult['success'] ? 'success' : 'high'; ?>" style="margin-top: 16px;">
+                                <div class="md-alert-icon"><?php echo $sendResult['success'] ? '✅' : '❌'; ?></div>
+                                <div class="md-alert-content">
+                                    <div class="md-alert-title"><?php echo $sendResult['success'] ? 'Advisory Sent' : 'Failed to Send'; ?></div>
+                                    <div class="md-alert-text">
+                                        <?php if ($sendResult['success']): ?>
+                                            Sent to <?php echo $sendResult['success_count']; ?> of <?php echo $sendResult['recipient_count']; ?> farmers.
+                                        <?php else: ?>
+                                            Error: <?php echo htmlspecialchars($sendResult['error'] ?? 'Unknown error'); ?>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
                         <?php endif; ?>
 
-                        <div class="guide-item <?php echo ($temp >= 30 || $hasHighPop) ? 'amber' : 'green'; ?>">
-                            <div class="guide-item-title">Grazing <span class="guide-item-tag"><?php echo $hasHighPop ? 'CAUTION' : ($temp >= 32 ? 'LIMITED' : ($temp >= 30 ? 'CAUTION' : 'SAFE')); ?></span></div>
-                            <div class="guide-item-desc">
-                                <?php if ($hasHighPop): ?>High chance of rain. Prepare to bring goats to shelter.
-                                <?php elseif ($temp >= 32): ?>Too hot for extended grazing. Provide shade and water access.
-                                <?php elseif ($temp >= 30): ?>Safe to graze until 3-4 PM. Provide shade during peak hours.
-                                <?php else: ?>Safe to graze until 4-5 PM. Good conditions for field rotation.<?php endif; ?>
+                        <div style="margin-top: 24px; border-top: 1px solid var(--md-divider); padding-top: 16px;">
+                            <div class="md-alert <?php echo ($temp >= 30 || $hasHighPop) ? 'medium' : 'success'; ?>" style="margin-bottom: 8px; padding: 12px;">
+                                <div class="md-alert-content">
+                                    <div class="md-alert-title" style="font-size: 13px;">Grazing</div>
+                                    <div class="md-alert-text" style="font-size: 12px;">
+                                        <?php if ($hasHighPop): ?>High chance of rain. Prepare to bring goats to shelter.
+                                        <?php elseif ($temp >= 32): ?>Too hot for extended grazing. Provide shade.
+                                        <?php elseif ($temp >= 30): ?>Safe to graze until 3-4 PM. Provide shade.
+                                        <?php else: ?>Safe to graze until 4-5 PM. Good conditions.<?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="guide-item <?php echo ($rainTonight > 2 || $hasHighPop) ? 'amber' : 'green'; ?>">
-                            <div class="guide-item-title">Rain Warning <span class="guide-item-tag"><?php echo $rainTonight > 5 ? 'ACTION' : (($rainTonight > 2 || $hasHighPop) ? 'ADVISORY' : 'NONE'); ?></span></div>
-                            <div class="guide-item-desc">
-                                <?php if ($rainTonight > 5): ?>Heavy rain expected. Bring goats into barn.
-                                <?php elseif ($rainTonight > 2): ?>Rain expected (<?php echo $rainTonight; ?> mm). Bring goats into barn before dark.
-                                <?php elseif ($hasHighPop): ?>High probability of rain. Monitor the sky.
-                                <?php else: ?>Minimal rain expected. Normal care is fine.<?php endif; ?>
+                            <div class="md-alert <?php echo ($rainTonight > 2 || $hasHighPop) ? 'medium' : 'success'; ?>" style="margin-bottom: 0; padding: 12px;">
+                                <div class="md-alert-content">
+                                    <div class="md-alert-title" style="font-size: 13px;">Rain Warning</div>
+                                    <div class="md-alert-text" style="font-size: 12px;">
+                                        <?php if ($rainTonight > 5): ?>Heavy rain expected. Bring goats into barn.
+                                        <?php elseif ($rainTonight > 2): ?>Rain expected (<?php echo $rainTonight; ?> mm). Bring goats into barn.
+                                        <?php elseif ($hasHighPop): ?>High probability of rain. Monitor the sky.
+                                        <?php else: ?>Minimal rain expected. Normal care is fine.<?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
+                </div>
             </div>
 
         </main>
@@ -1000,30 +966,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('boundsChart'); if (!ctx) return;
     const labels = chartData.time.map(t => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }));
     const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
-    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.2)');
-    gradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
+    gradient.addColorStop(0, 'rgba(25, 118, 210, 0.2)');
+    gradient.addColorStop(1, 'rgba(25, 118, 210, 0)');
 
     new Chart(ctx.getContext('2d'), {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
-                { label: 'Interpolated Mean', data: chartData.mean, borderColor: '#2563eb', backgroundColor: gradient, borderWidth: 3, pointRadius: 0, pointHoverRadius: 6, fill: true, tension: 0.4 },
-                { label: 'OpenWeather', data: chartData.ow, borderColor: 'rgba(245, 158, 11, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4, spanGaps: true },
-                { label: 'Open-Meteo', data: chartData.om, borderColor: 'rgba(59, 130, 246, 0.5)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4 },
-                { label: 'ECMWF', data: chartData.ec, borderColor: 'rgba(16, 185, 129, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4 },
-                { label: 'MET Norway', data: chartData.metno, borderColor: 'rgba(139, 92, 246, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4, spanGaps: true }
+                { label: 'Interpolated Mean', data: chartData.mean, borderColor: '#1976D2', backgroundColor: gradient, borderWidth: 3, pointRadius: 0, pointHoverRadius: 6, fill: true, tension: 0.4 },
+                { label: 'OpenWeather', data: chartData.ow, borderColor: 'rgba(255, 160, 0, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4, spanGaps: true },
+                { label: 'Open-Meteo', data: chartData.om, borderColor: 'rgba(100, 181, 246, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4 },
+                { label: 'ECMWF', data: chartData.ec, borderColor: 'rgba(56, 142, 60, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4 },
+                { label: 'MET Norway', data: chartData.metno, borderColor: 'rgba(156, 39, 176, 0.7)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.4, spanGaps: true }
             ]
         },
         options: {
             responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { display: true, position: 'top', labels: { boxWidth: 10, boxHeight: 10, font: { size: 10, family: 'system-ui' }, usePointStyle: true, pointStyle: 'circle' } },
-                tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', titleFont: { size: 11, weight: 'bold' }, bodyFont: { size: 11 }, padding: 10, boxPadding: 4, callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) label += context.parsed.y + '°C'; return label; } } }
+                legend: { display: true, position: 'top', labels: { boxWidth: 8, boxHeight: 8, font: { size: 11, family: 'var(--font-family)' }, usePointStyle: true, pointStyle: 'circle' } },
+                tooltip: { backgroundColor: 'rgba(33, 33, 33, 0.95)', titleFont: { size: 12, weight: '500' }, bodyFont: { size: 12 }, padding: 12, boxPadding: 6, callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) label += context.parsed.y + '°C'; return label; } } }
             },
             scales: {
-                x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 6 } },
-                y: { grid: { color: '#f1f5f9', drawBorder: false }, ticks: { font: { size: 9 }, color: '#94a3b8', callback: function(value) { return value + '°'; } } }
+                x: { grid: { display: false }, ticks: { font: { size: 11 }, color: 'var(--md-text-medium)', maxTicksLimit: 6 } },
+                y: { grid: { color: 'var(--md-divider)', drawBorder: false }, ticks: { font: { size: 11 }, color: 'var(--md-text-medium)', callback: function(value) { return value + '°'; } } }
             }
         }
     });
